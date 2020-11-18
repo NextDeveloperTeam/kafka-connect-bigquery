@@ -218,7 +218,7 @@ public class BigQuerySinkTask extends SinkTask {
       records = records.stream().map(r -> {
         if (r.value() != null) {
           Map<String, Object> convertedValue = converter.convertRecord(r, KafkaSchemaRecordType.VALUE);
-          if (convertedValue != null && convertedValue.get("op") == "d") {
+          if (convertedValue != null && "d".equals(convertedValue.get("op"))) {
             // This record is a debezium delete record (`"op": "d"`). Clone the record and set the `value` property
             // to `null` to emulate a proper kafka `tombstone` record.
             return r.newRecord(r.topic(), r.kafkaPartition(), r.keySchema(), r.key(), r.valueSchema(), null, r.timestamp(), r.headers());
@@ -227,6 +227,7 @@ public class BigQuerySinkTask extends SinkTask {
         return r;
       }).collect(Collectors.toList());
     }
+
     // Periodically poll for errors here instead of doing a stop-the-world check in flush()
     executor.maybeThrowEncounteredErrors();
     logger.debug("Putting {} records in the sink.", records.size());
