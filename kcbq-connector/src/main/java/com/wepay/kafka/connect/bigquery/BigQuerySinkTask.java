@@ -26,9 +26,11 @@ import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import com.google.common.annotations.VisibleForTesting;
+import com.wepay.kafka.connect.bigquery.api.KafkaSchemaRecordType;
 import com.wepay.kafka.connect.bigquery.api.SchemaRetriever;
 import com.wepay.kafka.connect.bigquery.config.BigQuerySinkConfig;
 import com.wepay.kafka.connect.bigquery.config.BigQuerySinkTaskConfig;
+import com.wepay.kafka.connect.bigquery.convert.RecordConverter;
 import com.wepay.kafka.connect.bigquery.convert.SchemaConverter;
 import com.wepay.kafka.connect.bigquery.utils.SinkRecordConverter;
 import com.wepay.kafka.connect.bigquery.exception.BigQueryConnectException;
@@ -70,6 +72,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static com.wepay.kafka.connect.bigquery.utils.TableNameUtils.intTable;
 
@@ -210,9 +213,22 @@ public class BigQuerySinkTask extends SinkTask {
 
   @Override
   public void put(Collection<SinkRecord> records) {
+    if (config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
+      RecordConverter<Map<String, Object>> converter = config.getRecordConverter();
+      records = records.stream().map(r -> {
+        if (r.value() != null) {
+          Map<String, Object> convertedValue = converter.convertRecord(r, KafkaSchemaRecordType.VALUE);
+          if (convertedValue != null && convertedValue.get("op") == "d") {
+            // This record is a debezium delete record (`"op": "d"`). Clone the record and set the `value` property
+            // to `null` to emulate a proper kafka `tombstone` record.
+            return r.newRecord(r.topic(), r.kafkaPartition(), r.keySchema(), r.key(), r.valueSchema(), null, r.timestamp(), r.headers());
+          }
+        }
+        return r;
+      }).collect(Collectors.toList());
+    }
     // Periodically poll for errors here instead of doing a stop-the-world check in flush()
     executor.maybeThrowEncounteredErrors();
-
     logger.debug("Putting {} records in the sink.", records.size());
 
     // create tableWriters
