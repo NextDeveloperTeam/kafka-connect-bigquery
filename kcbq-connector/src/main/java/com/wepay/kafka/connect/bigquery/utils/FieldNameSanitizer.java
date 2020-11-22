@@ -34,6 +34,12 @@ public class FieldNameSanitizer {
     return sanitizedName;
   }
 
+  // change the name format to Next table name convention
+  public static String nextTableName(String name) {
+    return name.replaceAll("debezium_trips_001_public_", "");
+//    String[] nextTableNameArray = name.split("_");
+//    return nextTableNameArray[nextTableNameArray.length -1];
+  }
 
   // Big Query specifies field name must begin with a alphabet or underscore and can only contain
   // letters, numbers, and underscores.

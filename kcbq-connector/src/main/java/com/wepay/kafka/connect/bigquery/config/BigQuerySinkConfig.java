@@ -34,21 +34,13 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
 import org.apache.kafka.connect.sink.SinkConnector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.Optional;
 
 /**
@@ -66,6 +58,12 @@ public class BigQuerySinkConfig extends AbstractConfig {
       "List of topics to consume, separated by commas";
   public static final String TOPICS_DEFAULT = "";
   private static final String TOPICS_DISPLAY =                   "Topics";
+
+  public static final String NEXT_TABLE_NAME_CONFIG =                     "nextTableName";
+  private static final ConfigDef.Type NEXT_TABLE_NAME_TYPE =              ConfigDef.Type.BOOLEAN;
+  private static final ConfigDef.Importance NEXT_TABLE_NAME_IMPORTANCE =  ConfigDef.Importance.LOW;
+  private static final String NEXT_TABLE_NAME_DOC =
+          "NEXT Custom Feature, change table name per next table name convention";
 
   public static final String TOPICS_REGEX_CONFIG =                     "topics.regex";
   private static final ConfigDef.Type TOPICS_REGEX_TYPE =              ConfigDef.Type.STRING;
@@ -85,6 +83,13 @@ public class BigQuerySinkConfig extends AbstractConfig {
   private static final ConfigDef.Importance ENABLE_BATCH_IMPORTANCE =      ConfigDef.Importance.LOW;
   private static final String ENABLE_BATCH_DOC =
       "Beta Feature; use with caution: The sublist of topics to be batch loaded through GCS";
+
+  public static final String ONLY_DEBEZIUM_AFTER_CONFIG =                         "onlyDebeziumAfter";
+  private static final ConfigDef.Type ONLY_DEBEZIUM_AFTER_TYPE =                  ConfigDef.Type.BOOLEAN;
+  private static final Boolean ONLY_DEBEZIUM_AFTER_DEFAULT =                 false;
+  private static final ConfigDef.Importance ONLY_DEBEZIUM_AFTER_IMPORTANCE =      ConfigDef.Importance.LOW;
+  private static final String ONLY_DEBEZIUM_AFTER_DOC =
+          "NEXT Custom Feature";
 
   public static final String BATCH_LOAD_INTERVAL_SEC_CONFIG =             "batchLoadIntervalSec";
   private static final ConfigDef.Type BATCH_LOAD_INTERVAL_SEC_TYPE =      ConfigDef.Type.INT;
@@ -269,7 +274,7 @@ public class BigQuerySinkConfig extends AbstractConfig {
   public static final String INTERMEDIATE_TABLE_SUFFIX_CONFIG =                     "intermediateTableSuffix";
   private static final ConfigDef.Type INTERMEDIATE_TABLE_SUFFIX_TYPE =              ConfigDef.Type.STRING;
   public static final String INTERMEDIATE_TABLE_SUFFIX_DEFAULT =                    "tmp";
-  private static final ConfigDef.Validator INTERMEDIATE_TABLE_SUFFIX_VALIDATOR =    new ConfigDef.NonEmptyString();
+//  private static final ConfigDef.Validator INTERMEDIATE_TABLE_SUFFIX_VALIDATOR =    new ConfigDef.NonEmptyString();
   private static final ConfigDef.Importance INTERMEDIATE_TABLE_SUFFIX_IMPORTANCE = ConfigDef.Importance.LOW;
   private static final String INTERMEDIATE_TABLE_SUFFIX_DOC =
       "A suffix that will be appended to the names of destination tables to create the names for " 
@@ -313,6 +318,11 @@ public class BigQuerySinkConfig extends AbstractConfig {
             TOPICS_ORDER_IN_GROUP,
             TOPICS_WIDTH,
             TOPICS_DISPLAY)
+        .define(
+            NEXT_TABLE_NAME_CONFIG,
+            NEXT_TABLE_NAME_TYPE,
+            NEXT_TABLE_NAME_IMPORTANCE,
+            NEXT_TABLE_NAME_DOC)
         .define(
             TOPICS_REGEX_CONFIG,
             TOPICS_REGEX_TYPE,
@@ -466,7 +476,7 @@ public class BigQuerySinkConfig extends AbstractConfig {
             INTERMEDIATE_TABLE_SUFFIX_CONFIG,
             INTERMEDIATE_TABLE_SUFFIX_TYPE,
             INTERMEDIATE_TABLE_SUFFIX_DEFAULT,
-            INTERMEDIATE_TABLE_SUFFIX_VALIDATOR,
+//            INTERMEDIATE_TABLE_SUFFIX_VALIDATOR,
             INTERMEDIATE_TABLE_SUFFIX_IMPORTANCE,
             INTERMEDIATE_TABLE_SUFFIX_DOC
         ).define(
@@ -483,8 +493,16 @@ public class BigQuerySinkConfig extends AbstractConfig {
             MERGE_RECORDS_THRESHOLD_VALIDATOR,
             MERGE_RECORDS_THRESHOLD_IMPORTANCE,
             MERGE_RECORDS_THRESHOLD_DOC
-        );
+        ).define(
+            ONLY_DEBEZIUM_AFTER_CONFIG,
+            ONLY_DEBEZIUM_AFTER_TYPE,
+            ONLY_DEBEZIUM_AFTER_DEFAULT,
+            ONLY_DEBEZIUM_AFTER_IMPORTANCE,
+            ONLY_DEBEZIUM_AFTER_DOC
+            );
   }
+
+
 
   /**
    * Throw an exception if the passed-in properties do not constitute a valid sink.

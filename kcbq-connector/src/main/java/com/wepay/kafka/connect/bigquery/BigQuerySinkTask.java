@@ -33,7 +33,6 @@ import com.wepay.kafka.connect.bigquery.config.BigQuerySinkTaskConfig;
 import com.wepay.kafka.connect.bigquery.convert.RecordConverter;
 import com.wepay.kafka.connect.bigquery.convert.SchemaConverter;
 import com.wepay.kafka.connect.bigquery.utils.SinkRecordConverter;
-import com.wepay.kafka.connect.bigquery.exception.BigQueryConnectException;
 import com.wepay.kafka.connect.bigquery.exception.SinkConfigConnectException;
 import com.wepay.kafka.connect.bigquery.utils.FieldNameSanitizer;
 import com.wepay.kafka.connect.bigquery.utils.PartitionedTableId;
@@ -52,6 +51,9 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.record.TimestampType;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -72,7 +74,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static com.wepay.kafka.connect.bigquery.utils.TableNameUtils.intTable;
 
@@ -94,6 +95,7 @@ public class BigQuerySinkTask extends SinkTask {
   private boolean useMessageTimeDatePartitioning;
   private boolean usePartitionDecorator;
   private boolean sanitize;
+  private boolean nextTableName;
   private boolean upsertDelete;
   private MergeBatches mergeBatches;
   private MergeQueries mergeQueries;
@@ -188,6 +190,11 @@ public class BigQuerySinkTask extends SinkTask {
     if (sanitize) {
       tableName = FieldNameSanitizer.sanitizeName(tableName);
     }
+
+    if(nextTableName) {
+      tableName =FieldNameSanitizer.nextTableName(tableName);
+    }
+
     TableId baseTableId = TableId.of(dataset, tableName);
     if (upsertDelete) {
       TableId intermediateTableId = mergeBatches.intermediateTableFor(baseTableId);
@@ -213,27 +220,15 @@ public class BigQuerySinkTask extends SinkTask {
 
   @Override
   public void put(Collection<SinkRecord> records) {
-    if (config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
-      RecordConverter<Map<String, Object>> converter = config.getRecordConverter();
-      records = records.stream().map(r -> {
-        if (r.value() != null) {
-          Map<String, Object> convertedValue = converter.convertRecord(r, KafkaSchemaRecordType.VALUE);
-          if (convertedValue != null && "d".equals(convertedValue.get("op"))) {
-            // This record is a debezium delete record (`"op": "d"`). Clone the record and set the `value` property
-            // to `null` to emulate a proper kafka `tombstone` record.
-            return r.newRecord(r.topic(), r.kafkaPartition(), r.keySchema(), r.key(), r.valueSchema(), null, r.timestamp(), r.headers());
-          }
-        }
-        return r;
-      }).collect(Collectors.toList());
-    }
-
     // Periodically poll for errors here instead of doing a stop-the-world check in flush()
     executor.maybeThrowEncounteredErrors();
+
     logger.debug("Putting {} records in the sink.", records.size());
 
     // create tableWriters
     Map<PartitionedTableId, TableWriterBuilder> tableWriterBuilders = new HashMap<>();
+    RecordConverter<Map<String, Object>> converter = config.getRecordConverter();
+
 
     for (SinkRecord record : records) {
       if (record.value() != null || config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
@@ -264,7 +259,34 @@ public class BigQuerySinkTask extends SinkTask {
           }
           tableWriterBuilders.put(table, tableWriterBuilder);
         }
-        tableWriterBuilders.get(table).addRow(record, table.getBaseTableId());
+
+        if(config.getBoolean(config.ONLY_DEBEZIUM_AFTER_CONFIG)) {
+          Schema afterSchema= null;
+          List<Field> kafkaConnectSchemaFields = record.valueSchema().fields();
+          for(Field kafkaConnectField : kafkaConnectSchemaFields) {
+            if(kafkaConnectField.name().equals("after")) {
+              afterSchema= kafkaConnectField.schema();
+              break;
+            }
+          }
+          Struct kafkaConnectStruct = (Struct) record.value();
+          SinkRecord afterRecord = null;
+          afterRecord = record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), afterSchema, kafkaConnectStruct.get("after"), record.timestamp(), record.headers());
+
+          if (config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
+            if (afterRecord.value() != null) {
+              Map<String, Object> convertedValue = converter.convertRecord(afterRecord, KafkaSchemaRecordType.VALUE);
+              if (convertedValue != null && "d".equals(convertedValue.get("op"))) {
+                // This record is a debezium delete record (`"op": "d"`). Clone the record and set the `value` property
+                // to `null` to emulate a proper kafka `tombstone` record.
+                afterRecord = afterRecord.newRecord(record.topic(), afterRecord.kafkaPartition(), afterRecord.keySchema(), afterRecord.key(), afterRecord.valueSchema(), null, afterRecord.timestamp(), afterRecord.headers());
+              }
+            }
+          }
+          tableWriterBuilders.get(table).addRow(afterRecord, table.getBaseTableId());
+        } else {
+          tableWriterBuilders.get(table).addRow(record, table.getBaseTableId());
+        }
       }
     }
 
@@ -433,6 +455,8 @@ public class BigQuerySinkTask extends SinkTask {
             config.getBoolean(config.BIGQUERY_PARTITION_DECORATOR_CONFIG);
     sanitize =
             config.getBoolean(BigQuerySinkConfig.SANITIZE_TOPICS_CONFIG);
+    nextTableName =
+            config.getBoolean(BigQuerySinkConfig.NEXT_TABLE_NAME_CONFIG);
     if (hasGCSBQTask) {
       startGCSToBQLoadTask();
     } else if (upsertDelete) {
