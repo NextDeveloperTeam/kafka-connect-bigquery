@@ -270,19 +270,19 @@ public class BigQuerySinkTask extends SinkTask {
             }
           }
           Struct kafkaConnectStruct = (Struct) record.value();
-          SinkRecord afterRecord = null;
-          afterRecord = record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), afterSchema, kafkaConnectStruct.get("after"), record.timestamp(), record.headers());
+          SinkRecord afterRecord = record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), afterSchema, kafkaConnectStruct.get("after"), record.timestamp(), record.headers());
 
-          if (config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
-            if (afterRecord.value() != null) {
-              Map<String, Object> convertedValue = converter.convertRecord(afterRecord, KafkaSchemaRecordType.VALUE);
-              if (convertedValue != null && "d".equals(convertedValue.get("op"))) {
-                // This record is a debezium delete record (`"op": "d"`). Clone the record and set the `value` property
-                // to `null` to emulate a proper kafka `tombstone` record.
-                afterRecord = afterRecord.newRecord(record.topic(), afterRecord.kafkaPartition(), afterRecord.keySchema(), afterRecord.key(), afterRecord.valueSchema(), null, afterRecord.timestamp(), afterRecord.headers());
-              }
-            }
-          }
+//          if (config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
+//            if (afterRecord.value() != null) {
+//              Map<String, Object> convertedValue = converter.convertRecord(afterRecord, KafkaSchemaRecordType.VALUE);
+//              if (convertedValue != null && "d".equals(convertedValue.get("op"))) {
+//                // This record is a debezium delete record (`"op": "d"`). Clone the record and set the `value` property
+//                // to `null` to emulate a proper kafka `tombstone` record.
+//                afterRecord = afterRecord.newRecord(record.topic(), afterRecord.kafkaPartition(), afterRecord.keySchema(), afterRecord.key(), afterRecord.valueSchema(), null, afterRecord.timestamp(), afterRecord.headers());
+//              }
+//            }
+//          }
+
           tableWriterBuilders.get(table).addRow(afterRecord, table.getBaseTableId());
         } else {
           tableWriterBuilders.get(table).addRow(record, table.getBaseTableId());
