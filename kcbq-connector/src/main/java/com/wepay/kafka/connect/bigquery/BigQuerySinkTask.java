@@ -265,12 +265,14 @@ public class BigQuerySinkTask extends SinkTask {
           List<Field> kafkaConnectSchemaFields = record.valueSchema().fields();
           for(Field kafkaConnectField : kafkaConnectSchemaFields) {
             if(kafkaConnectField.name().equals("after")) {
-              afterSchema= kafkaConnectField.schema();
+              afterSchema = kafkaConnectField.schema();
               break;
             }
           }
+
           Struct recordValueStruct = (Struct) record.value();
           Object afterValue = recordValueStruct.get("after");
+          System.out.println("verify after part::"+ afterValue);
           SinkRecord afterRecord = record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), afterSchema, afterValue, record.timestamp(), record.headers());
 
 //          if (config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
