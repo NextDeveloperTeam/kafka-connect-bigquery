@@ -37,7 +37,7 @@ public class FieldNameSanitizer {
 
   // change the name format to Next table name convention
   public static String nextTableName(String name, List<String> trimList) {
-    for(String trim: trimList) {
+    for (String trim: trimList) {
       name = name.replaceAll(trim, "");
     }
     return name;
