@@ -273,8 +273,8 @@ public class BigQuerySinkTask extends SinkTask {
   private SinkRecord getOnlyAfterPartOfDebeziumRecord(SinkRecord record) {
     Schema afterSchema = null;
     List<Field> kafkaConnectSchemaFields = record.valueSchema().fields();
-    for(Field kafkaConnectField : kafkaConnectSchemaFields) {
-      if(kafkaConnectField.name().equals("after")) {
+    for (Field kafkaConnectField : kafkaConnectSchemaFields) {
+      if (kafkaConnectField.name().equals("after")) {
         afterSchema = kafkaConnectField.schema();
         break;
       }
