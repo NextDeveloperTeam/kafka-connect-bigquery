@@ -227,7 +227,7 @@ public class BigQuerySinkTask extends SinkTask {
 
     // create tableWriters
     Map<PartitionedTableId, TableWriterBuilder> tableWriterBuilders = new HashMap<>();
-    RecordConverter<Map<String, Object>> converter = config.getRecordConverter();
+//    RecordConverter<Map<String, Object>> converter = config.getRecordConverter();
 
 
     for (SinkRecord record : records) {
@@ -261,7 +261,7 @@ public class BigQuerySinkTask extends SinkTask {
         }
 
         if(config.getBoolean(config.ONLY_DEBEZIUM_AFTER_CONFIG)) {
-          Schema afterSchema= null;
+          Schema afterSchema = null;
           List<Field> kafkaConnectSchemaFields = record.valueSchema().fields();
           for(Field kafkaConnectField : kafkaConnectSchemaFields) {
             if(kafkaConnectField.name().equals("after")) {
@@ -269,8 +269,9 @@ public class BigQuerySinkTask extends SinkTask {
               break;
             }
           }
-          Struct kafkaConnectStruct = (Struct) record.value();
-          SinkRecord afterRecord = record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), afterSchema, kafkaConnectStruct.get("after"), record.timestamp(), record.headers());
+          Struct recordValueStruct = (Struct) record.value();
+          Object afterValue = recordValueStruct.get("after");
+          SinkRecord afterRecord = record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), afterSchema, afterValue, record.timestamp(), record.headers());
 
 //          if (config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
 //            if (afterRecord.value() != null) {

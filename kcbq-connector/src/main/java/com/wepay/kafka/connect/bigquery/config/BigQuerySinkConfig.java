@@ -274,7 +274,7 @@ public class BigQuerySinkConfig extends AbstractConfig {
   public static final String INTERMEDIATE_TABLE_SUFFIX_CONFIG =                     "intermediateTableSuffix";
   private static final ConfigDef.Type INTERMEDIATE_TABLE_SUFFIX_TYPE =              ConfigDef.Type.STRING;
   public static final String INTERMEDIATE_TABLE_SUFFIX_DEFAULT =                    "tmp";
-//  private static final ConfigDef.Validator INTERMEDIATE_TABLE_SUFFIX_VALIDATOR =    new ConfigDef.NonEmptyString();
+  private static final ConfigDef.Validator INTERMEDIATE_TABLE_SUFFIX_VALIDATOR =    new ConfigDef.NonEmptyString();
   private static final ConfigDef.Importance INTERMEDIATE_TABLE_SUFFIX_IMPORTANCE = ConfigDef.Importance.LOW;
   private static final String INTERMEDIATE_TABLE_SUFFIX_DOC =
       "A suffix that will be appended to the names of destination tables to create the names for " 
@@ -476,7 +476,7 @@ public class BigQuerySinkConfig extends AbstractConfig {
             INTERMEDIATE_TABLE_SUFFIX_CONFIG,
             INTERMEDIATE_TABLE_SUFFIX_TYPE,
             INTERMEDIATE_TABLE_SUFFIX_DEFAULT,
-//            INTERMEDIATE_TABLE_SUFFIX_VALIDATOR,
+            INTERMEDIATE_TABLE_SUFFIX_VALIDATOR,
             INTERMEDIATE_TABLE_SUFFIX_IMPORTANCE,
             INTERMEDIATE_TABLE_SUFFIX_DOC
         ).define(
