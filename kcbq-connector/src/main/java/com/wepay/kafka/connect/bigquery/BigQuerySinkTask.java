@@ -190,11 +190,9 @@ public class BigQuerySinkTask extends SinkTask {
     if(!tableNameTrim.isEmpty()) {
       tableName =FieldNameSanitizer.nextTableName(tableName, tableNameTrim);
     }
-
     if (sanitize) {
       tableName = FieldNameSanitizer.sanitizeName(tableName);
     }
-
     TableId baseTableId = TableId.of(dataset, tableName);
     if (upsertDelete) {
       TableId intermediateTableId = mergeBatches.intermediateTableFor(baseTableId);
@@ -227,8 +225,6 @@ public class BigQuerySinkTask extends SinkTask {
 
     // create tableWriters
     Map<PartitionedTableId, TableWriterBuilder> tableWriterBuilders = new HashMap<>();
-//    RecordConverter<Map<String, Object>> converter = config.getRecordConverter();
-
 
     for (SinkRecord record : records) {
       if(config.getBoolean(config.ONLY_DEBEZIUM_AFTER_CONFIG)) {
@@ -263,7 +259,7 @@ public class BigQuerySinkTask extends SinkTask {
           tableWriterBuilders.put(table, tableWriterBuilder);
         }
         tableWriterBuilders.get(table).addRow(record, table.getBaseTableId());
-        }
+      }
     }
 
     // add tableWriters to the executor work queue
