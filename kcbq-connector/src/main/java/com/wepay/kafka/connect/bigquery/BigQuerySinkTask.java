@@ -231,6 +231,9 @@ public class BigQuerySinkTask extends SinkTask {
 
 
     for (SinkRecord record : records) {
+      if(config.getBoolean(config.ONLY_DEBEZIUM_AFTER_CONFIG)) {
+        record = getOnlyAfterPartOfDebeziumRecord(record);
+      }
       if (record.value() != null || config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
         PartitionedTableId table = getRecordTable(record);
         if (!tableWriterBuilders.containsKey(table)) {
@@ -259,38 +262,8 @@ public class BigQuerySinkTask extends SinkTask {
           }
           tableWriterBuilders.put(table, tableWriterBuilder);
         }
-
-        if(config.getBoolean(config.ONLY_DEBEZIUM_AFTER_CONFIG)) {
-          Schema afterSchema = null;
-          List<Field> kafkaConnectSchemaFields = record.valueSchema().fields();
-          for(Field kafkaConnectField : kafkaConnectSchemaFields) {
-            if(kafkaConnectField.name().equals("after")) {
-              afterSchema = kafkaConnectField.schema();
-              break;
-            }
-          }
-
-          Struct recordValueStruct = (Struct) record.value();
-          Object afterValue = recordValueStruct.get("after");
-          System.out.println("verify after part::"+ afterValue);
-          SinkRecord afterRecord = record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), afterSchema, afterValue, record.timestamp(), record.headers());
-
-//          if (config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
-//            if (afterRecord.value() != null) {
-//              Map<String, Object> convertedValue = converter.convertRecord(afterRecord, KafkaSchemaRecordType.VALUE);
-//              if (convertedValue != null && "d".equals(convertedValue.get("op"))) {
-//                // This record is a debezium delete record (`"op": "d"`). Clone the record and set the `value` property
-//                // to `null` to emulate a proper kafka `tombstone` record.
-//                afterRecord = afterRecord.newRecord(record.topic(), afterRecord.kafkaPartition(), afterRecord.keySchema(), afterRecord.key(), afterRecord.valueSchema(), null, afterRecord.timestamp(), afterRecord.headers());
-//              }
-//            }
-//          }
-
-          tableWriterBuilders.get(table).addRow(afterRecord, table.getBaseTableId());
-        } else {
-          tableWriterBuilders.get(table).addRow(record, table.getBaseTableId());
+        tableWriterBuilders.get(table).addRow(record, table.getBaseTableId());
         }
-      }
     }
 
     // add tableWriters to the executor work queue
@@ -300,6 +273,22 @@ public class BigQuerySinkTask extends SinkTask {
 
     // check if we should pause topics
     checkQueueSize();
+  }
+
+  private SinkRecord getOnlyAfterPartOfDebeziumRecord(SinkRecord record) {
+    Schema afterSchema = null;
+    List<Field> kafkaConnectSchemaFields = record.valueSchema().fields();
+    for(Field kafkaConnectField : kafkaConnectSchemaFields) {
+      if(kafkaConnectField.name().equals("after")) {
+        afterSchema = kafkaConnectField.schema();
+        break;
+      }
+    }
+    Struct recordValueStruct = (Struct) record.value();
+    Object afterValue = recordValueStruct.get("after");
+    System.out.println("verify after part::"+ afterValue);
+    record = record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), afterSchema, afterValue, record.timestamp(), record.headers());
+    return record;
   }
 
   // Important: this method is only safe to call during put(), flush(), or preCommit(); otherwise,
