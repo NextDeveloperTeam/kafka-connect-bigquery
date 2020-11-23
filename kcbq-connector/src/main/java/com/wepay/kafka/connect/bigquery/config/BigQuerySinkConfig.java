@@ -62,6 +62,7 @@ public class BigQuerySinkConfig extends AbstractConfig {
   public static final String TABLE_NAME_TRIM_CONFIG =                     "tableNameTrim";
   private static final ConfigDef.Type TABLE_NAME_TRIM_TYPE =              ConfigDef.Type.LIST;
   private static final ConfigDef.Importance TABLE_NAME_TRIM_IMPORTANCE =  ConfigDef.Importance.LOW;
+  public static final String TABLE_NAME_TRIM_DEFAULT = "";
   private static final String TABLE_NAME_TRIM_DOC =
       "NEXT Custom Feature, trim table names per next datalake table name convention";
 
@@ -321,6 +322,7 @@ public class BigQuerySinkConfig extends AbstractConfig {
         .define(
             TABLE_NAME_TRIM_CONFIG,
             TABLE_NAME_TRIM_TYPE,
+            TABLE_NAME_TRIM_DEFAULT,
             TABLE_NAME_TRIM_IMPORTANCE,
             TABLE_NAME_TRIM_DOC)
         .define(

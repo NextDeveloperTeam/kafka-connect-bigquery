@@ -187,12 +187,12 @@ public class BigQuerySinkTask extends SinkTask {
               "SMT replacement should either produce the <dataset>:<tableName> format or just the <tableName> format.");
     }
 
-    if (sanitize) {
-      tableName = FieldNameSanitizer.sanitizeName(tableName);
-    }
-
     if(!tableNameTrim.isEmpty()) {
       tableName =FieldNameSanitizer.nextTableName(tableName, tableNameTrim);
+    }
+
+    if (sanitize) {
+      tableName = FieldNameSanitizer.sanitizeName(tableName);
     }
 
     TableId baseTableId = TableId.of(dataset, tableName);
