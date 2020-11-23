@@ -95,7 +95,7 @@ public class BigQuerySinkTask extends SinkTask {
   private boolean useMessageTimeDatePartitioning;
   private boolean usePartitionDecorator;
   private boolean sanitize;
-  private boolean nextTableName;
+  private List<String> tableNameTrim;
   private boolean upsertDelete;
   private MergeBatches mergeBatches;
   private MergeQueries mergeQueries;
@@ -191,8 +191,8 @@ public class BigQuerySinkTask extends SinkTask {
       tableName = FieldNameSanitizer.sanitizeName(tableName);
     }
 
-    if(nextTableName) {
-      tableName =FieldNameSanitizer.nextTableName(tableName);
+    if(!tableNameTrim.isEmpty()) {
+      tableName =FieldNameSanitizer.nextTableName(tableName, tableNameTrim);
     }
 
     TableId baseTableId = TableId.of(dataset, tableName);
@@ -456,8 +456,8 @@ public class BigQuerySinkTask extends SinkTask {
             config.getBoolean(config.BIGQUERY_PARTITION_DECORATOR_CONFIG);
     sanitize =
             config.getBoolean(BigQuerySinkConfig.SANITIZE_TOPICS_CONFIG);
-    nextTableName =
-            config.getBoolean(BigQuerySinkConfig.NEXT_TABLE_NAME_CONFIG);
+    tableNameTrim =
+            config.getList(BigQuerySinkConfig.TABLE_NAME_TRIM_CONFIG);
     if (hasGCSBQTask) {
       startGCSToBQLoadTask();
     } else if (upsertDelete) {

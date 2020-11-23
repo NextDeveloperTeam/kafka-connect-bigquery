@@ -59,11 +59,11 @@ public class BigQuerySinkConfig extends AbstractConfig {
   public static final String TOPICS_DEFAULT = "";
   private static final String TOPICS_DISPLAY =                   "Topics";
 
-  public static final String NEXT_TABLE_NAME_CONFIG =                     "nextTableName";
-  private static final ConfigDef.Type NEXT_TABLE_NAME_TYPE =              ConfigDef.Type.BOOLEAN;
-  private static final ConfigDef.Importance NEXT_TABLE_NAME_IMPORTANCE =  ConfigDef.Importance.LOW;
-  private static final String NEXT_TABLE_NAME_DOC =
-          "NEXT Custom Feature, change table name per next table name convention";
+  public static final String TABLE_NAME_TRIM_CONFIG =                     "tableNameTrim";
+  private static final ConfigDef.Type TABLE_NAME_TRIM_TYPE =              ConfigDef.Type.LIST;
+  private static final ConfigDef.Importance TABLE_NAME_TRIM_IMPORTANCE =  ConfigDef.Importance.LOW;
+  private static final String TABLE_NAME_TRIM_DOC =
+      "NEXT Custom Feature, trim table names per next datalake table name convention";
 
   public static final String TOPICS_REGEX_CONFIG =                     "topics.regex";
   private static final ConfigDef.Type TOPICS_REGEX_TYPE =              ConfigDef.Type.STRING;
@@ -319,10 +319,10 @@ public class BigQuerySinkConfig extends AbstractConfig {
             TOPICS_WIDTH,
             TOPICS_DISPLAY)
         .define(
-            NEXT_TABLE_NAME_CONFIG,
-            NEXT_TABLE_NAME_TYPE,
-            NEXT_TABLE_NAME_IMPORTANCE,
-            NEXT_TABLE_NAME_DOC)
+            TABLE_NAME_TRIM_CONFIG,
+            TABLE_NAME_TRIM_TYPE,
+            TABLE_NAME_TRIM_IMPORTANCE,
+            TABLE_NAME_TRIM_DOC)
         .define(
             TOPICS_REGEX_CONFIG,
             TOPICS_REGEX_TYPE,
