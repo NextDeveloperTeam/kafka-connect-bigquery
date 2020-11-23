@@ -227,7 +227,7 @@ public class BigQuerySinkTask extends SinkTask {
     Map<PartitionedTableId, TableWriterBuilder> tableWriterBuilders = new HashMap<>();
 
     for (SinkRecord record : records) {
-      if(config.getBoolean(config.ONLY_DEBEZIUM_AFTER_CONFIG)) {
+      if (config.getBoolean(config.ONLY_DEBEZIUM_AFTER_CONFIG)) {
         record = getOnlyAfterPartOfDebeziumRecord(record);
       }
       if (record.value() != null || config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
