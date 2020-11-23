@@ -64,7 +64,9 @@ public class BigQuerySinkConfig extends AbstractConfig {
   private static final ConfigDef.Importance TABLE_NAME_TRIM_IMPORTANCE =  ConfigDef.Importance.LOW;
   public static final String TABLE_NAME_TRIM_DEFAULT = "";
   private static final String TABLE_NAME_TRIM_DOC =
-      "NEXT Custom Feature, trim table names per next datalake table name convention";
+      "NEXT Custom Feature, trim table names per next datalake table name convention, " +
+              "for example, if the topic name is debezium_trips-001.public.business_event," +
+              " we would like to trim 'debezium_trips-001.public.' to get the BQ table name 'business_event' ";
 
   public static final String TOPICS_REGEX_CONFIG =                     "topics.regex";
   private static final ConfigDef.Type TOPICS_REGEX_TYPE =              ConfigDef.Type.STRING;
@@ -90,7 +92,7 @@ public class BigQuerySinkConfig extends AbstractConfig {
   private static final Boolean ONLY_DEBEZIUM_AFTER_DEFAULT =                 false;
   private static final ConfigDef.Importance ONLY_DEBEZIUM_AFTER_IMPORTANCE =      ConfigDef.Importance.LOW;
   private static final String ONLY_DEBEZIUM_AFTER_DOC =
-          "NEXT Custom Feature";
+          "NEXT Custom Feature, this flag control whether extracting only the 'after' part for debezium change logs";
 
   public static final String BATCH_LOAD_INTERVAL_SEC_CONFIG =             "batchLoadIntervalSec";
   private static final ConfigDef.Type BATCH_LOAD_INTERVAL_SEC_TYPE =      ConfigDef.Type.INT;
