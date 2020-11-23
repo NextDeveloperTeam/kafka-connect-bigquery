@@ -511,7 +511,7 @@ public class BigQuerySinkConfig extends AbstractConfig {
             ONLY_DEBEZIUM_AFTER_DEFAULT,
             ONLY_DEBEZIUM_AFTER_IMPORTANCE,
             ONLY_DEBEZIUM_AFTER_DOC
-            );
+        );
   }
 
   /**
