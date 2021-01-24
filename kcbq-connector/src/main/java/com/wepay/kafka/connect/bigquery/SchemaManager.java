@@ -411,6 +411,10 @@ public class SchemaManager {
     }
     for (Map.Entry<String, Field> entry : existingSchemaFields.entrySet()) {
       if (!proposedSchemaFields.containsKey(entry.getKey())) {
+        System.out.println("debug----------");
+        System.out.println("some columns is deleted");
+        System.out.println("missing column key::" + entry.getKey());
+        System.out.println("missing column value::" + entry.getValue());
         newSchemaFields.add(entry.getValue().toBuilder().setMode(Field.Mode.NULLABLE).build());
       }
     }
