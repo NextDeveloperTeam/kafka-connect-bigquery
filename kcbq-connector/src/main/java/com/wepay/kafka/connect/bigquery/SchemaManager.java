@@ -249,10 +249,6 @@ public class SchemaManager {
       if (!schemaCache.get(table).equals(tableInfo.getDefinition().getSchema())) {
         logger.info("Attempting to update {} with schema {}",
             table(table), tableInfo.getDefinition().getSchema());
-        System.out.println("old schema");
-        System.out.println(schemaCache.get(table));
-        System.out.println("new schema");
-        System.out.println(tableInfo.getDefinition().getSchema());
         bigQuery.update(tableInfo);
         logger.debug("Successfully updated {}", table(table));
         schemaCache.put(table, tableInfo.getDefinition().getSchema());
@@ -276,8 +272,6 @@ public class SchemaManager {
       System.out.println("proposedSchema");
       System.out.println(proposedSchema);
       tableDescription = getUnionizedTableDescription(records);
-      System.out.println("tableDescription");
-      System.out.println(tableDescription);
     } catch (BigQueryConnectException exception) {
       throw new BigQueryConnectException("Failed to unionize schemas of records for the table " + table, exception);
     }

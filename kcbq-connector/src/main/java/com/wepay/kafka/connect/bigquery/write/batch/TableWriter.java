@@ -93,6 +93,7 @@ public class TableWriter implements Runnable {
           for (Map.Entry<SinkRecord, RowToInsert> record: currentBatchList) {
             currentBatch.put(record.getKey(), record.getValue());
           }
+          System.out.println("i am at writeRows");
           writer.writeRows(table, currentBatch);
           currentIndex += currentBatchSize;
           successCount++;

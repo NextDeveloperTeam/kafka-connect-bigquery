@@ -105,13 +105,16 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
       request = createInsertAllRequest(tableId, rows.values());
       writeResponse = bigQuery.insertAll(request);
       // Should only perform one schema update attempt.
+
       if (writeResponse.hasErrors()
               && onlyContainsInvalidSchemaErrors(writeResponse.getInsertErrors())) {
+        System.out.println("i am at attemptSchemaUpdate!!");
         attemptSchemaUpdate(tableId, new ArrayList<>(rows.keySet()));
       }
     } catch (BigQueryException exception) {
       // Should only perform one table creation attempt.
       if (isTableNotExistedException(exception) && autoCreateTables) {
+        System.out.println("i am at attemptTableCreate!!");
         attemptTableCreate(tableId.getBaseTableId(), new ArrayList<>(rows.keySet()));
       } else if (isTableMissingSchema(exception)) {
         attemptSchemaUpdate(tableId, new ArrayList<>(rows.keySet()));
@@ -128,8 +131,14 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
       if (writeResponse == null
           || onlyContainsInvalidSchemaErrors(writeResponse.getInsertErrors())) {
         try {
+          System.out.println("writeResponse++++" +  writeResponse);
+          if(writeResponse != null)
+          {
+            System.out.println("onlyContainsInvalidSchemaErrors++++" +  onlyContainsInvalidSchemaErrors(writeResponse.getInsertErrors()));
+          }
           // If the table was missing its schema, we never received a writeResponse
           logger.debug("re-attempting insertion");
+          System.out.println("re-attempting insertion");
           writeResponse = bigQuery.insertAll(request);
         } catch (BigQueryException exception) {
           // no-op, we want to keep retrying the insert
@@ -138,6 +147,7 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
       } else {
         return writeResponse.getInsertErrors();
       }
+      System.out.println("attemptCount:::::" + attemptCount);
       attemptCount++;
       if (attemptCount >= RETRY_LIMIT) {
         throw new BigQueryConnectException(
@@ -183,9 +193,12 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
    */
   private boolean onlyContainsInvalidSchemaErrors(Map<Long, List<BigQueryError>> errors) {
     logger.trace("write response contained errors: \n{}", errors);
+    System.out.println("write response contained errors: ++:::" + errors);
     boolean invalidSchemaError = false;
     for (List<BigQueryError> errorList : errors.values()) {
       for (BigQueryError error : errorList) {
+        System.out.println("error.getReason()+++" + error.getReason());
+        System.out.println("error.getMessage()+++" + error.getMessage());
         if (error.getReason().equals("invalid") && (error.getMessage().contains("no such field") || error.getMessage().contains("Missing required field"))) {
           invalidSchemaError = true;
         } else if (!error.getReason().equals("stopped")) {

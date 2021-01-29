@@ -91,7 +91,7 @@ public abstract class BigQueryWriter {
   protected InsertAllRequest createInsertAllRequest(PartitionedTableId tableId,
                                                     Collection<InsertAllRequest.RowToInsert> rows) {
     return InsertAllRequest.newBuilder(tableId.getFullTableId(), rows)
-        .setIgnoreUnknownValues(true)
+        .setIgnoreUnknownValues(false)
         .setSkipInvalidRows(false)
         .build();
   }
@@ -115,11 +115,16 @@ public abstract class BigQueryWriter {
         waitRandomTime();
       }
       try {
+        System.out.println("I am at performWriteRequest in writeRows");
         failedRowsMap = performWriteRequest(table, rows);
+        System.out.println("I am at failedRowsMap");
+        System.out.println(failedRowsMap);
+
         if (failedRowsMap.isEmpty()) {
           // table insertion completed with no reported errors
           return;
         } else if (isPartialFailure(rows, failedRowsMap)) {
+          System.out.println("I am at isPartialFailure");
           logger.info("{} rows succeeded, {} rows failed",
               rows.size() - failedRowsMap.size(), failedRowsMap.size());
           // update insert rows and retry in case of partial failure

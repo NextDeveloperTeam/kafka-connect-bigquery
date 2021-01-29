@@ -221,6 +221,7 @@ public class BigQuerySinkTask extends SinkTask {
     executor.maybeThrowEncounteredErrors();
 
     logger.debug("Putting {} records in the sink.", records.size());
+    System.out.println("Putting records in the sink.++" + records.size());
 
     // create tableWriters
     Map<PartitionedTableId, TableWriterBuilder> tableWriterBuilders = new HashMap<>();
@@ -247,22 +248,27 @@ public class BigQuerySinkTask extends SinkTask {
                 gcsBlobName,
                 recordConverter);
           } else {
+            System.out.println("I am at simpleTableWriterBuilder");
             TableWriter.Builder simpleTableWriterBuilder =
                 new TableWriter.Builder(bigQueryWriter, table, recordConverter);
             if (upsertDelete) {
+              System.out.println("I am at simpleTableWriterBuilder onFinish");
               simpleTableWriterBuilder.onFinish(rows ->
                   mergeBatches.onRowWrites(table.getBaseTableId(), rows));
             }
             tableWriterBuilder = simpleTableWriterBuilder;
           }
+          System.out.println("I am at tableWriterBuilders put");
           tableWriterBuilders.put(table, tableWriterBuilder);
         }
+        System.out.println("I am at tableWriterBuilders.get(table).addRow");
         tableWriterBuilders.get(table).addRow(record, table.getBaseTableId());
       }
     }
 
     // add tableWriters to the executor work queue
     for (TableWriterBuilder builder : tableWriterBuilders.values()) {
+      System.out.println("I am at executor.execute(builder.build())");
       executor.execute(builder.build());
     }
 
