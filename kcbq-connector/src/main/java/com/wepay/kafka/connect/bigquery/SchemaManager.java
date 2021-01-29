@@ -219,9 +219,7 @@ public class SchemaManager {
       try {
         bigQuery.create(tableInfo);
         logger.debug("Successfully created {}", table(table));
-        System.out.println("created-schema:::" + tableInfo.getDefinition().getSchema());
         schemaCache.put(table, tableInfo.getDefinition().getSchema());
-        System.out.println("schemaCache:::"+ schemaCache);
         return true;
       } catch (BigQueryException e) {
         if (e.getCode() == 409) {
