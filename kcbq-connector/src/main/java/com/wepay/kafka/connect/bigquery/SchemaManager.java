@@ -410,9 +410,6 @@ public class SchemaManager {
       if (!existingSchemaFields.containsKey(entry.getKey())) {
         newSchemaFields.add(entry.getValue().toBuilder().setMode(Field.Mode.NULLABLE).build());
       }
-//      else {
-//        newSchemaFields.add(entry.getValue());
-//      }
     }
     return com.google.cloud.bigquery.Schema.of(newSchemaFields);
   }
