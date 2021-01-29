@@ -91,7 +91,7 @@ public abstract class BigQueryWriter {
   protected InsertAllRequest createInsertAllRequest(PartitionedTableId tableId,
                                                     Collection<InsertAllRequest.RowToInsert> rows) {
     return InsertAllRequest.newBuilder(tableId.getFullTableId(), rows)
-        .setIgnoreUnknownValues(true)
+        .setIgnoreUnknownValues(false)
         .setSkipInvalidRows(false)
         .build();
   }
