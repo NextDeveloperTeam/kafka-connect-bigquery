@@ -402,15 +402,28 @@ public class SchemaManager {
     Map<String, Field> existingSchemaFields = schemaFields(existingSchema);
     Map<String, Field> proposedSchemaFields = schemaFields(proposedSchema);
     List<Field> newSchemaFields = new ArrayList<>();
-    // for handle column delete situation
-    for (Map.Entry<String, Field> entry : existingSchemaFields.entrySet()) {
-      newSchemaFields.add(entry.getValue());
-    }
-    for (Map.Entry<String, Field> entry : proposedSchemaFields.entrySet()) {
-      if (!existingSchemaFields.containsKey(entry.getKey())) {
-        newSchemaFields.add(entry.getValue().toBuilder().setMode(Field.Mode.NULLABLE).build());
+    if (BigQuerySinkConfig.ALLOW_DELETE_COLUMN_CONFIG.equals("true")) {
+      // for handle column delete situation
+      for (Map.Entry<String, Field> entry : existingSchemaFields.entrySet()) {
+        newSchemaFields.add(entry.getValue());
+      }
+      for (Map.Entry<String, Field> entry : proposedSchemaFields.entrySet()) {
+        if (!existingSchemaFields.containsKey(entry.getKey())) {
+          newSchemaFields.add(entry.getValue().toBuilder().setMode(Field.Mode.NULLABLE).build());
+        }
+      }
+    } else {
+      // generally it is valid to throw schema mismatch exception
+      for (Map.Entry<String, Field> entry : proposedSchemaFields.entrySet()) {
+        if (!existingSchemaFields.containsKey(entry.getKey())) {
+          newSchemaFields.add(entry.getValue().toBuilder().setMode(Field.Mode.NULLABLE).build());
+        }
+        else {
+          newSchemaFields.add(entry.getValue());
+        }
       }
     }
+
     return com.google.cloud.bigquery.Schema.of(newSchemaFields);
   }
 
