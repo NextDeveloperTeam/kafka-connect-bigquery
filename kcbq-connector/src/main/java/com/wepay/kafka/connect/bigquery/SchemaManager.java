@@ -408,7 +408,6 @@ public class SchemaManager {
     Map<String, Field> existingSchemaFields = schemaFields(existingSchema);
     Map<String, Field> proposedSchemaFields = schemaFields(proposedSchema);
     List<Field> newSchemaFields = new ArrayList<>();
-    logger.info("allowDeleteColumn is {}!", allowDeleteColumn);
     if (allowDeleteColumn) {
               // for handle column delete situation
       for (Map.Entry<String, Field> entry : existingSchemaFields.entrySet()) {
