@@ -312,6 +312,16 @@ public class BigQuerySinkConfig extends AbstractConfig {
   private static final String ONLY_DEBEZIUM_AFTER_DOC =
           "NEXT Custom Feature, this flag control whether extracting only the 'after' part for debezium change logs";
 
+  public static final String ALLOW_DELETE_COLUMN_CONFIG =                         "allowDeleteColumn";
+  private static final ConfigDef.Type ALLOW_DELETE_COLUMN_TYPE =                  ConfigDef.Type.BOOLEAN;
+  private static final Boolean ALLOW_DELETE_COLUMN_DEFAULT =                 false;
+  private static final ConfigDef.Importance ALLOW_DELETE_COLUMN_IMPORTANCE =      ConfigDef.Importance.LOW;
+  private static final String ALLOW_DELETE_COLUMN_DOC =
+          "NEXT Custom Feature, in best practice, we should not allow database column dropped, because this will cause " +
+                  "downstream jobs which consume this dropped column broken, however in order to recover from such " +
+                  "incident, this flag can be on to allow dropped column without getting google bq api schema unmatched " +
+                  "exception";
+
   /**
    * Return a ConfigDef object used to define this config's fields.
    *
@@ -511,7 +521,13 @@ public class BigQuerySinkConfig extends AbstractConfig {
             ONLY_DEBEZIUM_AFTER_DEFAULT,
             ONLY_DEBEZIUM_AFTER_IMPORTANCE,
             ONLY_DEBEZIUM_AFTER_DOC
-        );
+        ).define(
+            ALLOW_DELETE_COLUMN_CONFIG,
+            ALLOW_DELETE_COLUMN_TYPE,
+            ALLOW_DELETE_COLUMN_DEFAULT,
+            ALLOW_DELETE_COLUMN_IMPORTANCE,
+            ALLOW_DELETE_COLUMN_DOC
+            );
   }
 
   /**
