@@ -35,6 +35,7 @@ import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -462,14 +463,18 @@ public class MergeQueries {
   }
 
   private static List<String> listFields(FieldList keyFields, String prefix) {
-    return keyFields.stream()
-        .flatMap(field -> {
-          String fieldName = prefix + field.getName();
-          FieldList subFields = field.getSubFields();
-          if (subFields == null) {
-            return Stream.of(fieldName);
-          }
-          return listFields(subFields, fieldName + ".").stream();
-        }).collect(Collectors.toList());
+
+    List<String> list = keyFields.stream()
+            .flatMap(field -> {
+              String fieldName = prefix + field.getName();
+              FieldList subFields = field.getSubFields();
+              if (subFields == null) {
+                return Stream.of(fieldName);
+              }
+              return listFields(subFields, fieldName + ".").stream();
+            }).collect(Collectors.toList());
+
+    System.out.println("fields list in listFields::" + Arrays.toString(list.toArray()));
+    return list;
   }
 }
