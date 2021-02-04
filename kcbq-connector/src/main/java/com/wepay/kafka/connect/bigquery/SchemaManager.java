@@ -19,6 +19,7 @@
 
 package com.wepay.kafka.connect.bigquery;
 
+
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.Clustering;
@@ -503,8 +504,6 @@ public class SchemaManager {
   TableInfo constructTableInfo(TableId table, com.google.cloud.bigquery.Schema bigQuerySchema, String tableDescription) {
     StandardTableDefinition.Builder builder = StandardTableDefinition.newBuilder()
         .setSchema(bigQuerySchema);
-
-    System.out.println("constructTableInfo::table:" + table);
 
     if (intermediateTables) {
       // Shameful hack: make the table ingestion time-partitioned here so that the _PARTITIONTIME
