@@ -20,17 +20,10 @@
 package com.wepay.kafka.connect.bigquery;
 
 
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.BigQueryException;
-import com.google.cloud.bigquery.Clustering;
-import com.google.cloud.bigquery.Field;
-import com.google.cloud.bigquery.LegacySQLTypeName;
-import com.google.cloud.bigquery.StandardTableDefinition;
-import com.google.cloud.bigquery.TableId;
-import com.google.cloud.bigquery.TableInfo;
-import com.google.cloud.bigquery.TimePartitioning;
+import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.TimePartitioning.Type;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.wepay.kafka.connect.bigquery.api.SchemaRetriever;
 import com.wepay.kafka.connect.bigquery.config.BigQuerySinkConfig;
 import com.wepay.kafka.connect.bigquery.convert.KafkaDataBuilder;
@@ -42,11 +35,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -64,6 +53,7 @@ public class SchemaManager {
   private final boolean allowBQRequiredFieldRelaxation;
   private final boolean allowSchemaUnionization;
   private final boolean allowDeleteColumn;
+  private final boolean fixKafkaKeyOrder;
   private final Optional<String> kafkaKeyFieldName;
   private final Optional<String> kafkaDataFieldName;
   private final Optional<String> timestampPartitionFieldName;
@@ -99,6 +89,7 @@ public class SchemaManager {
       boolean allowBQRequiredFieldRelaxation,
       boolean allowSchemaUnionization,
       boolean allowDeleteColumn,
+      boolean fixKafkaKeyOrder,
       Optional<String> kafkaKeyFieldName,
       Optional<String> kafkaDataFieldName,
       Optional<String> timestampPartitionFieldName,
@@ -111,6 +102,7 @@ public class SchemaManager {
         allowBQRequiredFieldRelaxation,
         allowSchemaUnionization,
         allowDeleteColumn,
+        fixKafkaKeyOrder,
         kafkaKeyFieldName,
         kafkaDataFieldName,
         timestampPartitionFieldName,
@@ -129,6 +121,7 @@ public class SchemaManager {
       boolean allowBQRequiredFieldRelaxation,
       boolean allowSchemaUnionization,
       boolean allowDeleteColumn,
+      boolean fixKafkaKeyOrder,
       Optional<String> kafkaKeyFieldName,
       Optional<String> kafkaDataFieldName,
       Optional<String> timestampPartitionFieldName,
@@ -144,6 +137,7 @@ public class SchemaManager {
     this.allowBQRequiredFieldRelaxation = allowBQRequiredFieldRelaxation;
     this.allowSchemaUnionization = allowSchemaUnionization;
     this.allowDeleteColumn = allowDeleteColumn;
+    this.fixKafkaKeyOrder = fixKafkaKeyOrder;
     this.kafkaKeyFieldName = kafkaKeyFieldName;
     this.kafkaDataFieldName = kafkaDataFieldName;
     this.timestampPartitionFieldName = timestampPartitionFieldName;
@@ -163,6 +157,7 @@ public class SchemaManager {
         allowBQRequiredFieldRelaxation,
         allowSchemaUnionization,
         allowDeleteColumn,
+        fixKafkaKeyOrder,
         kafkaKeyFieldName,
         kafkaDataFieldName,
         timestampPartitionFieldName,
@@ -283,6 +278,7 @@ public class SchemaManager {
   @VisibleForTesting
   com.google.cloud.bigquery.Schema getAndValidateProposedSchema(
       TableId table, List<SinkRecord> records) {
+
     com.google.cloud.bigquery.Schema result;
     if (allowSchemaUnionization) {
       List<com.google.cloud.bigquery.Schema> bigQuerySchemas = getSchemasList(table, records);
@@ -290,6 +286,11 @@ public class SchemaManager {
     } else {
       com.google.cloud.bigquery.Schema existingSchema = readTableSchema(table);
       result = convertRecordSchema(records.get(records.size() - 1));
+      // if the kafka key has multiple keys, it is highly possible that we need to fix the order
+      // we set this false by default, if the error happens, we could just enable this flag to handle
+      if(fixKafkaKeyOrder) {
+        result = fixKafkaKeyOrder(result);
+      }
       if (existingSchema != null) {
         validateSchemaChange(existingSchema, result);
         if (allowBQRequiredFieldRelaxation) {
@@ -297,6 +298,32 @@ public class SchemaManager {
         }
       }
     }
+    return result;
+  }
+
+  private com.google.cloud.bigquery.Schema fixKafkaKeyOrder(com.google.cloud.bigquery.Schema result) {
+    Map<String, Field> schemaFields = schemaFields(result);
+    List<Field> newSchemaFields = new ArrayList<>();
+    for (Map.Entry<String, Field> entry : schemaFields.entrySet()) {
+      if(entry.getKey().equals("key") || entry.getKey().equals("__kafka_key")) {
+        FieldList subFields = entry.getValue().getSubFields();
+        final List<Field> fields = Lists.newArrayList(subFields.iterator());
+        fields.sort(new Comparator<Field>() {
+          @Override
+          public int compare(Field o1, Field o2) {
+            return o1.getName().compareTo(o2.getName());
+          }
+        });
+        final FieldList sortedList = FieldList.of(fields);
+        Field sortedKeyField = Field.newBuilder(entry.getValue().getName(),entry.getValue().getType(), sortedList)
+                .setDescription(entry.getValue().getDescription())
+                .setMode(entry.getValue().getMode()).build();
+        newSchemaFields.add(sortedKeyField);
+      } else {
+        newSchemaFields.add(entry.getValue());
+      }
+    }
+    result = com.google.cloud.bigquery.Schema.of(newSchemaFields);
     return result;
   }
 
@@ -407,9 +434,10 @@ public class SchemaManager {
       com.google.cloud.bigquery.Schema proposedSchema) {
     Map<String, Field> existingSchemaFields = schemaFields(existingSchema);
     Map<String, Field> proposedSchemaFields = schemaFields(proposedSchema);
+
     List<Field> newSchemaFields = new ArrayList<>();
     if (allowDeleteColumn) {
-              // for handle column delete situation
+      // for handle column delete situation
       for (Map.Entry<String, Field> entry : existingSchemaFields.entrySet()) {
         newSchemaFields.add(entry.getValue());
       }
@@ -429,7 +457,6 @@ public class SchemaManager {
         }
       }
     }
-
     return com.google.cloud.bigquery.Schema.of(newSchemaFields);
   }
 
@@ -463,6 +490,8 @@ public class SchemaManager {
   TableInfo constructTableInfo(TableId table, com.google.cloud.bigquery.Schema bigQuerySchema, String tableDescription) {
     StandardTableDefinition.Builder builder = StandardTableDefinition.newBuilder()
         .setSchema(bigQuerySchema);
+
+    System.out.println("constructTableInfo::table:" + table);
 
     if (intermediateTables) {
       // Shameful hack: make the table ingestion time-partitioned here so that the _PARTITIONTIME

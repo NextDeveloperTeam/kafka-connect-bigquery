@@ -339,8 +339,9 @@ public class BigQuerySinkTask extends SinkTask {
     boolean allowReqFieldRelaxation = config.getBoolean(config.ALLOW_BIGQUERY_REQUIRED_FIELD_RELAXATION_CONFIG);
     boolean allowSchemaUnionization = config.getBoolean(config.ALLOW_SCHEMA_UNIONIZATION_CONFIG);
     boolean allowDeleteColumn = config.getBoolean(config.ALLOW_DELETE_COLUMN_CONFIG);
+    boolean fixKafkaKeyOrder = config.getBoolean(config.FIX_KAFKA_KEY_ORDER_CONFIG);
     return new SchemaManager(schemaRetriever, schemaConverter, getBigQuery(),
-                             allowNewBQFields, allowReqFieldRelaxation, allowSchemaUnionization, allowDeleteColumn,
+                             allowNewBQFields, allowReqFieldRelaxation, allowSchemaUnionization, allowDeleteColumn,fixKafkaKeyOrder,
                              kafkaKeyFieldName, kafkaDataFieldName,
                              timestampPartitionFieldName, clusteringFieldName);
   }
