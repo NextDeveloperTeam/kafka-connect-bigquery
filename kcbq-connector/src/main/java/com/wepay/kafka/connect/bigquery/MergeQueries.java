@@ -207,10 +207,6 @@ public class MergeQueries {
         INTERMEDIATE_TABLE_KEY_FIELD_NAME + "."
     );
 
-    for (String keyField : keyFields) {
-      System.out.println("keyField in upsertDeleteMergeFlushQuery ::" + keyField);
-    }
-
     List<String> valueColumns = valueColumns(intermediateSchema);
 
     final String key = INTERMEDIATE_TABLE_KEY_FIELD_NAME;
@@ -283,10 +279,6 @@ public class MergeQueries {
     final String i = INTERMEDIATE_TABLE_ITERATION_FIELD_NAME;
     final String value = INTERMEDIATE_TABLE_VALUE_FIELD_NAME;
     final String batch = INTERMEDIATE_TABLE_BATCH_NUMBER_FIELD;
-
-    for (String keyField : keyFields) {
-      System.out.println("keyField in upsertMergeFlushQuery ::" + keyField);
-    }
 
     return "MERGE " + table(destinationTable) + " "
         + "USING ("
@@ -376,11 +368,6 @@ public class MergeQueries {
 
     List<String> valueColumns = valueColumns(intermediateSchema);
 
-    for (String keyField : keyFields) {
-      System.out.println("keyField in deleteMergeFlushQuery ::" + keyField);
-    }
-
-
     final String key = INTERMEDIATE_TABLE_KEY_FIELD_NAME;
     final String i = INTERMEDIATE_TABLE_ITERATION_FIELD_NAME;
     final String value = INTERMEDIATE_TABLE_VALUE_FIELD_NAME;
@@ -464,7 +451,7 @@ public class MergeQueries {
 
   private static List<String> listFields(FieldList keyFields, String prefix) {
 
-    List<String> list = keyFields.stream()
+    return keyFields.stream()
             .flatMap(field -> {
               String fieldName = prefix + field.getName();
               FieldList subFields = field.getSubFields();
@@ -474,7 +461,5 @@ public class MergeQueries {
               return listFields(subFields, fieldName + ".").stream();
             }).collect(Collectors.toList());
 
-    System.out.println("fields list in listFields::" + Arrays.toString(list.toArray()));
-    return list;
   }
 }
