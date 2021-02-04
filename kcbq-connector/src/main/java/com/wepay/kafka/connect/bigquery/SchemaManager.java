@@ -19,7 +19,15 @@
 
 package com.wepay.kafka.connect.bigquery;
 
-
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.BigQueryException;
+import com.google.cloud.bigquery.Clustering;
+import com.google.cloud.bigquery.Field;
+import com.google.cloud.bigquery.LegacySQLTypeName;
+import com.google.cloud.bigquery.StandardTableDefinition;
+import com.google.cloud.bigquery.TableId;
+import com.google.cloud.bigquery.TableInfo;
+import com.google.cloud.bigquery.TimePartitioning;
 import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.TimePartitioning.Type;
 import com.google.common.annotations.VisibleForTesting;
@@ -35,6 +43,11 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -434,7 +447,6 @@ public class SchemaManager {
       com.google.cloud.bigquery.Schema proposedSchema) {
     Map<String, Field> existingSchemaFields = schemaFields(existingSchema);
     Map<String, Field> proposedSchemaFields = schemaFields(proposedSchema);
-
     List<Field> newSchemaFields = new ArrayList<>();
     if (allowDeleteColumn) {
       // for handle column delete situation
@@ -457,6 +469,7 @@ public class SchemaManager {
         }
       }
     }
+
     return com.google.cloud.bigquery.Schema.of(newSchemaFields);
   }
 
