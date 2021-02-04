@@ -292,7 +292,6 @@ public class SchemaManager {
   @VisibleForTesting
   com.google.cloud.bigquery.Schema getAndValidateProposedSchema(
       TableId table, List<SinkRecord> records) {
-
     com.google.cloud.bigquery.Schema result;
     if (allowSchemaUnionization) {
       List<com.google.cloud.bigquery.Schema> bigQuerySchemas = getSchemasList(table, records);
