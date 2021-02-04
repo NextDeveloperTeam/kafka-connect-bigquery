@@ -450,13 +450,13 @@ public class MergeQueries {
 
   private static List<String> listFields(FieldList keyFields, String prefix) {
     return keyFields.stream()
-          .flatMap(field -> {
-            String fieldName = prefix + field.getName();
-            FieldList subFields = field.getSubFields();
-            if (subFields == null) {
-              return Stream.of(fieldName);
-            }
-            return listFields(subFields, fieldName + ".").stream();
-          }).collect(Collectors.toList());
+        .flatMap(field -> {
+          String fieldName = prefix + field.getName();
+          FieldList subFields = field.getSubFields();
+          if (subFields == null) {
+            return Stream.of(fieldName);
+          }
+          return listFields(subFields, fieldName + ".").stream();
+        }).collect(Collectors.toList());
   }
 }
