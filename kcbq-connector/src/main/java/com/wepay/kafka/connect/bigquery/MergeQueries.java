@@ -213,8 +213,7 @@ public class MergeQueries {
     final String value = INTERMEDIATE_TABLE_VALUE_FIELD_NAME;
     final String batch = INTERMEDIATE_TABLE_BATCH_NUMBER_FIELD;
 
-
-    String sql = "MERGE " + table(destinationTable) + " "
+    return "MERGE " + table(destinationTable) + " "
         + "USING ("
           + "SELECT * FROM ("
             + "SELECT ARRAY_AGG("
@@ -242,11 +241,6 @@ public class MergeQueries {
             + partitionTimeValue()
             + valueColumns.stream().map(col -> "src." + value + "." + col).collect(Collectors.joining(", "))
         + ");";
-
-    System.out.println("query::::" + sql);
-
-    return sql;
-
   }
 
   /*
