@@ -52,6 +52,8 @@ import java.util.Optional;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
+
 
 /**
  * Class for managing Schemas of BigQuery tables (creating and updating).
@@ -318,15 +320,11 @@ public class SchemaManager {
     Map<String, Field> schemaFields = schemaFields(result);
     List<Field> newSchemaFields = new ArrayList<>();
     for (Map.Entry<String, Field> entry : schemaFields.entrySet()) {
-      if(entry.getKey().equals("key") || entry.getKey().equals("__kafka_key")) {
+      if(entry.getKey().equals(MergeQueries.INTERMEDIATE_TABLE_KEY_FIELD_NAME) || entry.getKey().equals(kafkaKeyFieldName.get())) {
         FieldList subFields = entry.getValue().getSubFields();
-        final List<Field> fields = Lists.newArrayList(subFields.iterator());
-        fields.sort(new Comparator<Field>() {
-          @Override
-          public int compare(Field o1, Field o2) {
-            return o1.getName().compareTo(o2.getName());
-          }
-        });
+        final List<Field> fields = Lists.newArrayList(subFields.iterator()).stream()
+                .sorted(Comparator.comparing(Field::getName))
+                .collect(Collectors.toList());
         final FieldList sortedList = FieldList.of(fields);
         Field sortedKeyField = Field.newBuilder(entry.getValue().getName(),entry.getValue().getType(), sortedList)
                 .setDescription(entry.getValue().getDescription())
