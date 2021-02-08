@@ -50,6 +50,9 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.record.TimestampType;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -91,6 +94,7 @@ public class BigQuerySinkTask extends SinkTask {
   private boolean useMessageTimeDatePartitioning;
   private boolean usePartitionDecorator;
   private boolean sanitize;
+  private List<String> tableNameTrim;
   private boolean upsertDelete;
   private MergeBatches mergeBatches;
   private MergeQueries mergeQueries;
@@ -182,6 +186,9 @@ public class BigQuerySinkTask extends SinkTask {
               "SMT replacement should either produce the <dataset>:<tableName> format or just the <tableName> format.");
     }
 
+    if (!tableNameTrim.isEmpty()) {
+      tableName = FieldNameSanitizer.nextTableName(tableName, tableNameTrim);
+    }
     if (sanitize) {
       tableName = FieldNameSanitizer.sanitizeName(tableName);
     }
@@ -219,6 +226,9 @@ public class BigQuerySinkTask extends SinkTask {
     Map<PartitionedTableId, TableWriterBuilder> tableWriterBuilders = new HashMap<>();
 
     for (SinkRecord record : records) {
+      if (config.getBoolean(config.ONLY_DEBEZIUM_AFTER_CONFIG)) {
+        record = getOnlyAfterPartOfDebeziumRecord(record);
+      }
       if (record.value() != null || config.getBoolean(config.DELETE_ENABLED_CONFIG)) {
         PartitionedTableId table = getRecordTable(record);
         if (!tableWriterBuilders.containsKey(table)) {
@@ -258,6 +268,21 @@ public class BigQuerySinkTask extends SinkTask {
 
     // check if we should pause topics
     checkQueueSize();
+  }
+
+  private SinkRecord getOnlyAfterPartOfDebeziumRecord(SinkRecord record) {
+    Schema afterSchema = null;
+    List<Field> kafkaConnectSchemaFields = record.valueSchema().fields();
+    for (Field kafkaConnectField : kafkaConnectSchemaFields) {
+      if (kafkaConnectField.name().equals("after")) {
+        afterSchema = kafkaConnectField.schema();
+        break;
+      }
+    }
+    Struct recordValueStruct = (Struct) record.value();
+    Object afterValue = recordValueStruct.get("after");
+    record = record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), afterSchema, afterValue, record.timestamp(), record.headers());
+    return record;
   }
 
   // Important: this method is only safe to call during put(), flush(), or preCommit(); otherwise,
@@ -313,8 +338,9 @@ public class BigQuerySinkTask extends SinkTask {
     boolean allowNewBQFields = config.getBoolean(config.ALLOW_NEW_BIGQUERY_FIELDS_CONFIG);
     boolean allowReqFieldRelaxation = config.getBoolean(config.ALLOW_BIGQUERY_REQUIRED_FIELD_RELAXATION_CONFIG);
     boolean allowSchemaUnionization = config.getBoolean(config.ALLOW_SCHEMA_UNIONIZATION_CONFIG);
+    boolean allowDeleteColumn = config.getBoolean(config.ALLOW_DELETE_COLUMN_CONFIG);
     return new SchemaManager(schemaRetriever, schemaConverter, getBigQuery(),
-                             allowNewBQFields, allowReqFieldRelaxation, allowSchemaUnionization,
+                             allowNewBQFields, allowReqFieldRelaxation, allowSchemaUnionization, allowDeleteColumn,
                              kafkaKeyFieldName, kafkaDataFieldName,
                              timestampPartitionFieldName, clusteringFieldName);
   }
@@ -416,6 +442,8 @@ public class BigQuerySinkTask extends SinkTask {
             config.getBoolean(config.BIGQUERY_PARTITION_DECORATOR_CONFIG);
     sanitize =
             config.getBoolean(BigQuerySinkConfig.SANITIZE_TOPICS_CONFIG);
+    tableNameTrim =
+            config.getList(BigQuerySinkConfig.TABLE_NAME_TRIM_CONFIG);
     if (hasGCSBQTask) {
       startGCSToBQLoadTask();
     } else if (upsertDelete) {

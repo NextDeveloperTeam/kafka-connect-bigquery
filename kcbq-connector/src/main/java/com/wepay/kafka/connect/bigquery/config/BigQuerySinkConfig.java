@@ -296,6 +296,32 @@ public class BigQuerySinkConfig extends AbstractConfig {
       "How many records to write to an intermediate table before performing a merge flush, if " 
       + "upsert/delete is enabled. Can be set to -1 to disable record count-based flushing.";
 
+  public static final String TABLE_NAME_TRIM_CONFIG =                     "tableNameTrim";
+  private static final ConfigDef.Type TABLE_NAME_TRIM_TYPE =              ConfigDef.Type.LIST;
+  private static final ConfigDef.Importance TABLE_NAME_TRIM_IMPORTANCE =  ConfigDef.Importance.LOW;
+  public static final String TABLE_NAME_TRIM_DEFAULT = "";
+  private static final String TABLE_NAME_TRIM_DOC =
+          "NEXT Custom Feature, trim table names per next datalake table name convention, " +
+                  "for example, if the topic name is debezium_trips-001.public.business_event," +
+                  " we would like to trim 'debezium_trips-001.public.' to get the BQ table name 'business_event' ";
+
+  public static final String ONLY_DEBEZIUM_AFTER_CONFIG =                         "onlyDebeziumAfter";
+  private static final ConfigDef.Type ONLY_DEBEZIUM_AFTER_TYPE =                  ConfigDef.Type.BOOLEAN;
+  private static final Boolean ONLY_DEBEZIUM_AFTER_DEFAULT =                 false;
+  private static final ConfigDef.Importance ONLY_DEBEZIUM_AFTER_IMPORTANCE =      ConfigDef.Importance.LOW;
+  private static final String ONLY_DEBEZIUM_AFTER_DOC =
+          "NEXT Custom Feature, this flag control whether extracting only the 'after' part for debezium change logs";
+
+  public static final String ALLOW_DELETE_COLUMN_CONFIG =                         "allowDeleteColumn";
+  private static final ConfigDef.Type ALLOW_DELETE_COLUMN_TYPE =                  ConfigDef.Type.BOOLEAN;
+  private static final Boolean ALLOW_DELETE_COLUMN_DEFAULT =                 false;
+  private static final ConfigDef.Importance ALLOW_DELETE_COLUMN_IMPORTANCE =      ConfigDef.Importance.LOW;
+  private static final String ALLOW_DELETE_COLUMN_DOC =
+          "NEXT Custom Feature, in best practice, we should not allow database column dropped, because this will cause " +
+                  "downstream jobs which consume this dropped column broken, however in order to recover from such " +
+                  "incident, this flag can be on to allow dropped column without getting google bq api schema unmatched " +
+                  "exception";
+
   /**
    * Return a ConfigDef object used to define this config's fields.
    *
@@ -483,7 +509,25 @@ public class BigQuerySinkConfig extends AbstractConfig {
             MERGE_RECORDS_THRESHOLD_VALIDATOR,
             MERGE_RECORDS_THRESHOLD_IMPORTANCE,
             MERGE_RECORDS_THRESHOLD_DOC
-        );
+        ).define(
+            TABLE_NAME_TRIM_CONFIG,
+            TABLE_NAME_TRIM_TYPE,
+            TABLE_NAME_TRIM_DEFAULT,
+            TABLE_NAME_TRIM_IMPORTANCE,
+            TABLE_NAME_TRIM_DOC
+        ).define(
+            ONLY_DEBEZIUM_AFTER_CONFIG,
+            ONLY_DEBEZIUM_AFTER_TYPE,
+            ONLY_DEBEZIUM_AFTER_DEFAULT,
+            ONLY_DEBEZIUM_AFTER_IMPORTANCE,
+            ONLY_DEBEZIUM_AFTER_DOC
+        ).define(
+            ALLOW_DELETE_COLUMN_CONFIG,
+            ALLOW_DELETE_COLUMN_TYPE,
+            ALLOW_DELETE_COLUMN_DEFAULT,
+            ALLOW_DELETE_COLUMN_IMPORTANCE,
+            ALLOW_DELETE_COLUMN_DOC
+            );
   }
 
   /**
