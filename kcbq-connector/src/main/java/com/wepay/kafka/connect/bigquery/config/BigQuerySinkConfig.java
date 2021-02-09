@@ -322,6 +322,15 @@ public class BigQuerySinkConfig extends AbstractConfig {
                   "incident, this flag can be on to allow dropped column without getting google bq api schema unmatched " +
                   "exception";
 
+  public static final String FIX_KAFKA_KEY_ORDER_CONFIG =                         "fixKafkaKeyOrder";
+  private static final ConfigDef.Type FIX_KAFKA_KEY_ORDER_TYPE =                  ConfigDef.Type.BOOLEAN;
+  private static final Boolean FIX_KAFKA_KEY_ORDER_DEFAULT =                 false;
+  private static final ConfigDef.Importance FIX_KAFKA_KEY_ORDER_IMPORTANCE =      ConfigDef.Importance.LOW;
+  private static final String FIX_KAFKA_KEY_ORDER_DOC =
+          "NEXT Custom Feature, for kafka key contains multiple fields, the order might be changed when fetching from schema retriver" +
+                  "and breaks when update/delete is enabled, turn on this flag could fix the order";
+
+
   /**
    * Return a ConfigDef object used to define this config's fields.
    *
@@ -527,6 +536,12 @@ public class BigQuerySinkConfig extends AbstractConfig {
             ALLOW_DELETE_COLUMN_DEFAULT,
             ALLOW_DELETE_COLUMN_IMPORTANCE,
             ALLOW_DELETE_COLUMN_DOC
+        ).define(
+            FIX_KAFKA_KEY_ORDER_CONFIG,
+            FIX_KAFKA_KEY_ORDER_TYPE,
+            FIX_KAFKA_KEY_ORDER_DEFAULT,
+            FIX_KAFKA_KEY_ORDER_IMPORTANCE,
+            FIX_KAFKA_KEY_ORDER_DOC
             );
   }
 

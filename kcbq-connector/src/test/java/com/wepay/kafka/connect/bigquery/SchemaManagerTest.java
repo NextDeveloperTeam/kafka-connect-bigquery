@@ -79,7 +79,7 @@ public class SchemaManagerTest {
     Optional<String> kafkaKeyFieldName = Optional.of("kafkaKey");
     Optional<String> kafkaDataFieldName = Optional.of("kafkaData");
     SchemaManager schemaManager = new SchemaManager(mockSchemaRetriever, mockSchemaConverter,
-        mockBigQuery, false, false, false, false, kafkaKeyFieldName, kafkaDataFieldName, Optional.empty(), Optional.empty());
+        mockBigQuery, false, false, false, false, false, kafkaKeyFieldName, kafkaDataFieldName, Optional.empty(), Optional.empty());
 
     when(mockSchemaConverter.convertSchema(mockKafkaSchema)).thenReturn(fakeBigQuerySchema);
     when(mockKafkaSchema.doc()).thenReturn(testDoc);
@@ -97,7 +97,7 @@ public class SchemaManagerTest {
   public void testTimestampPartitionSet() {
     Optional<String> testField = Optional.of("testField");
     SchemaManager schemaManager = new SchemaManager(mockSchemaRetriever, mockSchemaConverter,
-        mockBigQuery, false, false, false, false, Optional.empty(), Optional.empty(), testField, Optional.empty());
+        mockBigQuery, false, false, false, false, false, Optional.empty(), Optional.empty(), testField, Optional.empty());
 
     when(mockSchemaConverter.convertSchema(mockKafkaSchema)).thenReturn(fakeBigQuerySchema);
     when(mockKafkaSchema.doc()).thenReturn(testDoc);
@@ -117,7 +117,7 @@ public class SchemaManagerTest {
     Optional<String> timestampPartitionFieldName = Optional.of("testField");
     Optional<List<String>> testField = Optional.of(Arrays.asList("column1", "column2"));
     SchemaManager schemaManager = new SchemaManager(mockSchemaRetriever, mockSchemaConverter,
-        mockBigQuery, false, false, false, false, Optional.empty(), Optional.empty(), timestampPartitionFieldName, testField);
+        mockBigQuery, false, false, false, false, false, Optional.empty(), Optional.empty(), timestampPartitionFieldName, testField);
 
     when(mockSchemaConverter.convertSchema(mockKafkaSchema)).thenReturn(fakeBigQuerySchema);
     when(mockKafkaSchema.doc()).thenReturn(testDoc);
@@ -144,7 +144,7 @@ public class SchemaManagerTest {
         Field.newBuilder("f1", LegacySQLTypeName.BOOLEAN).setMode(Field.Mode.NULLABLE).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(false, true, false, false);
+    SchemaManager schemaManager = createSchemaManager(false, true, false, false, false);
 
     testGetAndValidateProposedSchema(schemaManager, existingSchema, relaxedSchema, relaxedSchema);
   }
@@ -159,7 +159,7 @@ public class SchemaManagerTest {
         Field.newBuilder("f1", LegacySQLTypeName.BOOLEAN).setMode(Field.Mode.NULLABLE).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(true, false, false, false);
+    SchemaManager schemaManager = createSchemaManager(true, false, false, false, false);
 
     testGetAndValidateProposedSchema(schemaManager, existingSchema, relaxedSchema, null);
   }
@@ -175,7 +175,7 @@ public class SchemaManagerTest {
         Field.newBuilder("f2", LegacySQLTypeName.INTEGER).setMode(Field.Mode.NULLABLE).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(true, false, false, false);
+    SchemaManager schemaManager = createSchemaManager(true, false, false, false, false);
 
     testGetAndValidateProposedSchema(schemaManager, existingSchema, expandedSchema, expandedSchema);
   }
@@ -191,7 +191,7 @@ public class SchemaManagerTest {
         Field.newBuilder("f2", LegacySQLTypeName.INTEGER).setMode(Field.Mode.NULLABLE).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(false, true, false, false);
+    SchemaManager schemaManager = createSchemaManager(false, true, false, false, false);
 
     testGetAndValidateProposedSchema(schemaManager, existingSchema, expandedSchema, null);
   }
@@ -207,7 +207,7 @@ public class SchemaManagerTest {
         Field.newBuilder("f2", LegacySQLTypeName.INTEGER).setMode(Field.Mode.REQUIRED).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(true, false, false, false);
+    SchemaManager schemaManager = createSchemaManager(true, false, false, false, false);
 
     testGetAndValidateProposedSchema(schemaManager, existingSchema, expandedSchema, null);
   }
@@ -233,7 +233,7 @@ public class SchemaManagerTest {
         Field.newBuilder("f3", LegacySQLTypeName.NUMERIC).setMode(Field.Mode.NULLABLE).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(true, true, false, false);
+    SchemaManager schemaManager = createSchemaManager(true, true, false, false, false);
 
     testGetAndValidateProposedSchema
         (schemaManager, existingSchema, expandedAndRelaxedSchema, expectedSchema);
@@ -254,7 +254,7 @@ public class SchemaManagerTest {
         Field.newBuilder("f2", LegacySQLTypeName.INTEGER).setMode(Field.Mode.NULLABLE).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(true, true, true, false);
+    SchemaManager schemaManager = createSchemaManager(true, true, true, false, false);
 
     testGetAndValidateProposedSchema(schemaManager, existingSchema, disjointSchema, expectedSchema);
   }
@@ -270,7 +270,7 @@ public class SchemaManagerTest {
         Field.newBuilder("f2", LegacySQLTypeName.INTEGER).setMode(Field.Mode.NULLABLE).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(false, true, true, false);
+    SchemaManager schemaManager = createSchemaManager(false, true, true, false, false);
 
     testGetAndValidateProposedSchema(schemaManager, existingSchema, expandedSchema, null);
   }
@@ -285,7 +285,7 @@ public class SchemaManagerTest {
         Field.newBuilder("f1", LegacySQLTypeName.BOOLEAN).setMode(Field.Mode.NULLABLE).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(true, false, true, false);
+    SchemaManager schemaManager = createSchemaManager(true, false, true, false, false);
 
     testGetAndValidateProposedSchema(schemaManager, existingSchema, expandedSchema, null);
   }
@@ -314,15 +314,15 @@ public class SchemaManagerTest {
         Field.newBuilder("f2", LegacySQLTypeName.INTEGER).setMode(Field.Mode.NULLABLE).build()
     );
 
-    SchemaManager schemaManager = createSchemaManager(true, true, true, false);
+    SchemaManager schemaManager = createSchemaManager(true, true, true, false, false);
 
     testGetAndValidateProposedSchema(schemaManager, existingSchema, newSchemas, expectedSchema);
   }
 
   private SchemaManager createSchemaManager(
-      boolean allowNewFields, boolean allowFieldRelaxation, boolean allowUnionization, boolean allowDeleteColumn) {
+      boolean allowNewFields, boolean allowFieldRelaxation, boolean allowUnionization, boolean allowDeleteColumn, boolean fixKafkaKeyOrder) {
     return new SchemaManager(new IdentitySchemaRetriever(), mockSchemaConverter, mockBigQuery,
-        allowNewFields, allowFieldRelaxation, allowUnionization, allowDeleteColumn,
+        allowNewFields, allowFieldRelaxation, allowUnionization, allowDeleteColumn, fixKafkaKeyOrder,
         Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
   }
 
