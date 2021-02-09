@@ -226,14 +226,14 @@ public class MergeQueries {
         + ") "
         + "ON `" + destinationTable.getTable() + "`." + keyFieldName + "=src." + key + " "
         + "WHEN MATCHED AND src." + value + " IS NOT NULL "
-          + "THEN UPDATE SET " + valueColumns.stream().map(col -> col + "=src." + value + "." + col).collect(Collectors.joining(", ")) + " "
+          + "THEN UPDATE SET " + valueColumns.stream().map(col -> "`" + col + "`" + "=src." + value + "." + col).collect(Collectors.joining(", ")) + " "
         + "WHEN MATCHED AND src." + value + " IS NULL "
           + "THEN DELETE "
         + "WHEN NOT MATCHED AND src." + value + " IS NOT NULL "
           + "THEN INSERT ("
             + keyFieldName + ", "
             + partitionTimePseudoColumn()
-            + String.join(", ", valueColumns) + ") "
+            + "`" + String.join("`, `", valueColumns) + "`) "
           + "VALUES ("
             + "src." + key + ", "
             + partitionTimeValue()
