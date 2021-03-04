@@ -370,7 +370,7 @@ public class BigQuerySinkTask extends SinkTask {
                                         autoCreateTables,
                                         skipInvalidRows);
     } else {
-      return new SimpleBigQueryWriter(bigQuery, retry, retryWait);
+      return new SimpleBigQueryWriter(bigQuery, retry, retryWait, skipInvalidRows);
     }
   }
 
