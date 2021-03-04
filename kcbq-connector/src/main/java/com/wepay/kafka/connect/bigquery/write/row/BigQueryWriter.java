@@ -89,10 +89,10 @@ public abstract class BigQueryWriter {
    * @return the InsertAllRequest.
    */
   protected InsertAllRequest createInsertAllRequest(PartitionedTableId tableId,
-                                                    Collection<InsertAllRequest.RowToInsert> rows) {
+                                                    Collection<InsertAllRequest.RowToInsert> rows, Boolean skipInvalidRows) {
     return InsertAllRequest.newBuilder(tableId.getFullTableId(), rows)
         .setIgnoreUnknownValues(false)
-        .setSkipInvalidRows(false)
+        .setSkipInvalidRows(skipInvalidRows)
         .build();
   }
 

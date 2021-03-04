@@ -63,7 +63,7 @@ public class SimpleBigQueryWriter extends BigQueryWriter {
   @Override
   public Map<Long, List<BigQueryError>> performWriteRequest(PartitionedTableId tableId,
                                                             SortedMap<SinkRecord, InsertAllRequest.RowToInsert> rows) {
-    InsertAllRequest request = createInsertAllRequest(tableId, rows.values());
+    InsertAllRequest request = createInsertAllRequest(tableId, rows.values(), false);
     InsertAllResponse writeResponse = bigQuery.insertAll(request);
     if (writeResponse.hasErrors()) {
       logger.warn(
