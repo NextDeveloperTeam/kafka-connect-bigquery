@@ -58,6 +58,7 @@ public abstract class BigQueryWriter {
 
   private int retries;
   private long retryWaitMs;
+  private boolean skipInvalidRows;
 
   /**
    * @param retries the number of times to retry a request if BQ returns an internal service error
@@ -65,9 +66,10 @@ public abstract class BigQueryWriter {
    * @param retryWaitMs the amount of time to wait in between reattempting a request if BQ returns
    *                    an internal service error or a service unavailable error.
    */
-  public BigQueryWriter(int retries, long retryWaitMs) {
+  public BigQueryWriter(int retries, long retryWaitMs, boolean skipInvalidRows) {
     this.retries = retries;
     this.retryWaitMs = retryWaitMs;
+    this.skipInvalidRows = skipInvalidRows;
   }
 
   /**
@@ -92,7 +94,7 @@ public abstract class BigQueryWriter {
                                                     Collection<InsertAllRequest.RowToInsert> rows) {
     return InsertAllRequest.newBuilder(tableId.getFullTableId(), rows)
         .setIgnoreUnknownValues(false)
-        .setSkipInvalidRows(false)
+        .setSkipInvalidRows(skipInvalidRows)
         .build();
   }
 
@@ -128,6 +130,13 @@ public abstract class BigQueryWriter {
           retryCount++;
         } else {
           // throw an exception in case of complete failure
+          // if all failed rows fail again, either throw exception to stop the job, or when
+          // skipInvalidRows is true, just log failed rows and skip to let the job continue
+          if (skipInvalidRows) {
+            logger.info("skipInvalidRows-exception:" + new BigQueryConnectException(failedRowsMap));
+            logger.info("skipInvalidRows-rows:" + getFailedRows(rows, failedRowsMap.keySet(), table));
+            return;
+          }
           throw new BigQueryConnectException(failedRowsMap);
         }
       } catch (BigQueryException err) {
