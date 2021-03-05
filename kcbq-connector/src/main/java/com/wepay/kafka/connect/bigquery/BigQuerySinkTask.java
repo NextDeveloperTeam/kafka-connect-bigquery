@@ -351,7 +351,7 @@ public class BigQuerySinkTask extends SinkTask {
     boolean allowRequiredFieldRelaxation = config.getBoolean(config.ALLOW_BIGQUERY_REQUIRED_FIELD_RELAXATION_CONFIG);
     int retry = config.getInt(config.BIGQUERY_RETRY_CONFIG);
     long retryWait = config.getLong(config.BIGQUERY_RETRY_WAIT_CONFIG);
-    boolean skipFailedRows = config.getBoolean(config.SKIP_INVALID_ROWS_CONFIG);
+    boolean skipInvalidRows = config.getBoolean(config.SKIP_INVALID_ROWS_CONFIG);
 
     BigQuery bigQuery = getBigQuery();
     if (upsertDelete) {
@@ -361,16 +361,16 @@ public class BigQuerySinkTask extends SinkTask {
                                             retryWait,
                                             autoCreateTables,
                                             mergeBatches.intermediateToDestinationTables(),
-                                            skipFailedRows);
+                                            skipInvalidRows);
     } else if (autoCreateTables || allowNewBigQueryFields || allowRequiredFieldRelaxation) {
       return new AdaptiveBigQueryWriter(bigQuery,
                                         getSchemaManager(),
                                         retry,
                                         retryWait,
                                         autoCreateTables,
-                                        skipFailedRows);
+                                        skipInvalidRows);
     } else {
-      return new SimpleBigQueryWriter(bigQuery, retry, retryWait, skipFailedRows);
+      return new SimpleBigQueryWriter(bigQuery, retry, retryWait, skipInvalidRows);
     }
   }
 
