@@ -59,7 +59,7 @@ public class BigQuerySinkTaskConfig extends BigQuerySinkConfig {
 
   public static final String BIGQUERY_RETRY_CONFIG =                    "bigQueryRetry";
   private static final ConfigDef.Type BIGQUERY_RETRY_TYPE =             ConfigDef.Type.INT;
-  public static final Integer BIGQUERY_RETRY_DEFAULT =                  3;
+  public static final Integer BIGQUERY_RETRY_DEFAULT =                  0;
   private static final ConfigDef.Validator BIGQUERY_RETRY_VALIDATOR =   ConfigDef.Range.atLeast(0);
   private static final ConfigDef.Importance BIGQUERY_RETRY_IMPORTANCE =
       ConfigDef.Importance.MEDIUM;
