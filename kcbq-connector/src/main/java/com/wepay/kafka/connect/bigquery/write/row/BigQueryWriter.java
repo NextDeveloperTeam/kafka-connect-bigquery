@@ -133,8 +133,8 @@ public abstract class BigQueryWriter {
           // if all failed rows fail again, either throw exception to stop the job, or when
           // skipInvalidRows is true, just log failed rows and skip to let the job continue
           if (skipInvalidRows) {
-            logger.info("skipFailedRows-exception:" + new BigQueryConnectException(failedRowsMap));
-            logger.info("skipFailedRows-rows:" + getFailedRows(rows, failedRowsMap.keySet(), table));
+            logger.info("skipInvalidRows-exception:" + new BigQueryConnectException(failedRowsMap));
+            logger.info("skipInvalidRows-rows:" + getFailedRows(rows, failedRowsMap.keySet(), table));
             return;
           }
           throw new BigQueryConnectException(failedRowsMap);
