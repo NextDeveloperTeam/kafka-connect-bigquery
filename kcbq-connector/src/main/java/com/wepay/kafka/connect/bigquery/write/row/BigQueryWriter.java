@@ -130,7 +130,11 @@ public abstract class BigQueryWriter {
           retryCount++;
         } else {
           // throw an exception in case of complete failure
+          // if all failed rows fail again, either throw exception to stop the job, or when
+          // skipFailedRows is true, just log failed rows and skip to let the job continue
           if (skipFailedRows) {
+            logger.info("skipFailedRows-exception: {}", mostRecentException);
+            logger.info("skipFailedRows-rows: {}", failedRowsMap);
             return;
           }
           throw new BigQueryConnectException(failedRowsMap);
