@@ -71,8 +71,8 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
                                 int retry,
                                 long retryWait,
                                 boolean autoCreateTables,
-                                boolean skipFailedRows) {
-    super(retry, retryWait, skipFailedRows);
+                                boolean skipInvalidRows) {
+    super(retry, retryWait, skipInvalidRows);
     this.bigQuery = bigQuery;
     this.schemaManager = schemaManager;
     this.autoCreateTables = autoCreateTables;

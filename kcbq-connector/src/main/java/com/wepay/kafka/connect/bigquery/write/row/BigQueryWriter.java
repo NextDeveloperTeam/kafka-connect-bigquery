@@ -58,7 +58,7 @@ public abstract class BigQueryWriter {
 
   private int retries;
   private long retryWaitMs;
-  private boolean skipFailedRows;
+  private boolean skipInvalidRows;
 
   /**
    * @param retries the number of times to retry a request if BQ returns an internal service error
@@ -66,10 +66,10 @@ public abstract class BigQueryWriter {
    * @param retryWaitMs the amount of time to wait in between reattempting a request if BQ returns
    *                    an internal service error or a service unavailable error.
    */
-  public BigQueryWriter(int retries, long retryWaitMs, boolean skipFailedRows) {
+  public BigQueryWriter(int retries, long retryWaitMs, boolean skipInvalidRows) {
     this.retries = retries;
     this.retryWaitMs = retryWaitMs;
-    this.skipFailedRows = skipFailedRows;
+    this.skipInvalidRows = skipInvalidRows;
   }
 
   /**
@@ -94,7 +94,7 @@ public abstract class BigQueryWriter {
                                                     Collection<InsertAllRequest.RowToInsert> rows) {
     return InsertAllRequest.newBuilder(tableId.getFullTableId(), rows)
         .setIgnoreUnknownValues(false)
-        .setSkipInvalidRows(false)
+        .setSkipInvalidRows(skipInvalidRows)
         .build();
   }
 
@@ -132,9 +132,9 @@ public abstract class BigQueryWriter {
           // throw an exception in case of complete failure
           // if all failed rows fail again, either throw exception to stop the job, or when
           // skipFailedRows is true, just log failed rows and skip to let the job continue
-          if (skipFailedRows) {
-            logger.info("skipFailedRows-exception: {}", mostRecentException);
-            logger.info("skipFailedRows-rows: {}", failedRowsMap);
+          if (skipInvalidRows) {
+            logger.info("skipFailedRows-exception:" + new BigQueryConnectException(failedRowsMap));
+            logger.info("skipFailedRows-rows:" + getFailedRows(rows, failedRowsMap.keySet(), table));
             return;
           }
           throw new BigQueryConnectException(failedRowsMap);

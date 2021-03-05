@@ -322,11 +322,11 @@ public class BigQuerySinkConfig extends AbstractConfig {
                   "incident, this flag can be on to allow dropped column without getting google bq api schema unmatched " +
                   "exception";
 
-  public static final String SKIP_FAILED_ROWS_CONFIG =                         "skipFailedRows";
-  private static final ConfigDef.Type SKIP_FAILED_ROWS_TYPE =                  ConfigDef.Type.BOOLEAN;
-  private static final Boolean SKIP_FAILED_ROWS_DEFAULT =                 false;
-  private static final ConfigDef.Importance SKIP_FAILED_ROWS_IMPORTANCE =      ConfigDef.Importance.LOW;
-  private static final String SKIP_FAILED_ROWS_DOC =
+  public static final String SKIP_INVALID_ROWS_CONFIG =                         "skipInvalidRows";
+  private static final ConfigDef.Type SKIP_INVALID_ROWS_TYPE =                  ConfigDef.Type.BOOLEAN;
+  private static final Boolean SKIP_INVALID_ROWS_DEFAULT =                 false;
+  private static final ConfigDef.Importance SKIP_INVALID_ROWS_IMPORTANCE =      ConfigDef.Importance.LOW;
+  private static final String SKIP_INVALID_ROWS_DOC =
           "NEXT Custom Feature, set this can skip failed rows when write to big query without failing the job";
 
   /**
@@ -535,11 +535,11 @@ public class BigQuerySinkConfig extends AbstractConfig {
             ALLOW_DELETE_COLUMN_IMPORTANCE,
             ALLOW_DELETE_COLUMN_DOC
         ).define(
-            SKIP_FAILED_ROWS_CONFIG,
-            SKIP_FAILED_ROWS_TYPE,
-            SKIP_FAILED_ROWS_DEFAULT,
-            SKIP_FAILED_ROWS_IMPORTANCE,
-            SKIP_FAILED_ROWS_DOC
+            SKIP_INVALID_ROWS_CONFIG,
+            SKIP_INVALID_ROWS_TYPE,
+            SKIP_INVALID_ROWS_DEFAULT,
+            SKIP_INVALID_ROWS_IMPORTANCE,
+            SKIP_INVALID_ROWS_DOC
     );
   }
 
