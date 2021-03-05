@@ -34,21 +34,13 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
 import org.apache.kafka.connect.sink.SinkConnector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.Optional;
 
 /**
@@ -322,12 +314,12 @@ public class BigQuerySinkConfig extends AbstractConfig {
                   "incident, this flag can be on to allow dropped column without getting google bq api schema unmatched " +
                   "exception";
 
-  public static final String SKIP_INVALID_ROWS_CONFIG =                         "skipInvalidRows";
-  private static final ConfigDef.Type SKIP_INVALID_ROWS_TYPE =                  ConfigDef.Type.BOOLEAN;
-  private static final Boolean SKIP_INVALID_ROWS_DEFAULT =                 false;
-  private static final ConfigDef.Importance SKIP_INVALID_ROWS_IMPORTANCE =      ConfigDef.Importance.LOW;
-  private static final String SKIP_INVALID_ROWS_DOC =
-          "NEXT Custom Feature, set this can skip invalid rows when write to big query without failing the job";
+  public static final String SKIP_FAILED_ROWS_CONFIG =                         "skipFailedRows";
+  private static final ConfigDef.Type SKIP_FAILED_ROWS_TYPE =                  ConfigDef.Type.BOOLEAN;
+  private static final Boolean SKIP_FAILED_ROWS_DEFAULT =                 false;
+  private static final ConfigDef.Importance SKIP_FAILED_ROWS_IMPORTANCE =      ConfigDef.Importance.LOW;
+  private static final String SKIP_FAILED_ROWS_DOC =
+          "NEXT Custom Feature, set this can skip failed rows when write to big query without failing the job";
 
   /**
    * Return a ConfigDef object used to define this config's fields.
@@ -535,11 +527,11 @@ public class BigQuerySinkConfig extends AbstractConfig {
             ALLOW_DELETE_COLUMN_IMPORTANCE,
             ALLOW_DELETE_COLUMN_DOC
         ).define(
-            SKIP_INVALID_ROWS_CONFIG,
-            SKIP_INVALID_ROWS_TYPE,
-            SKIP_INVALID_ROWS_DEFAULT,
-            SKIP_INVALID_ROWS_IMPORTANCE,
-            SKIP_INVALID_ROWS_DOC
+            SKIP_FAILED_ROWS_CONFIG,
+            SKIP_FAILED_ROWS_TYPE,
+            SKIP_FAILED_ROWS_DEFAULT,
+            SKIP_FAILED_ROWS_IMPORTANCE,
+            SKIP_FAILED_ROWS_DOC
     );
   }
 

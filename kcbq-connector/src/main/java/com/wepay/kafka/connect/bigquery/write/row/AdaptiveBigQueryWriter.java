@@ -57,7 +57,6 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
   private final BigQuery bigQuery;
   private final SchemaManager schemaManager;
   private final boolean autoCreateTables;
-  private final boolean skipInvalidRows;
 
 
   /**
@@ -72,12 +71,11 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
                                 int retry,
                                 long retryWait,
                                 boolean autoCreateTables,
-                                boolean skipInvalidRows) {
-    super(retry, retryWait);
+                                boolean skipFailedRows) {
+    super(retry, retryWait, skipFailedRows);
     this.bigQuery = bigQuery;
     this.schemaManager = schemaManager;
     this.autoCreateTables = autoCreateTables;
-    this.skipInvalidRows = skipInvalidRows;
   }
 
   private boolean isTableMissingSchema(BigQueryException exception) {
@@ -106,7 +104,7 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
     InsertAllRequest request = null;
 
     try {
-      request = createInsertAllRequest(tableId, rows.values(), skipInvalidRows);
+      request = createInsertAllRequest(tableId, rows.values());
       writeResponse = bigQuery.insertAll(request);
       // Should only perform one schema update attempt.
       if (writeResponse.hasErrors()

@@ -44,7 +44,6 @@ public class SimpleBigQueryWriter extends BigQueryWriter {
   private static final Logger logger = LoggerFactory.getLogger(SimpleBigQueryWriter.class);
 
   private final BigQuery bigQuery;
-  private final boolean skipInvalidRows;
 
 
   /**
@@ -52,10 +51,9 @@ public class SimpleBigQueryWriter extends BigQueryWriter {
    * @param retry How many retries to make in the event of a 500/503 error.
    * @param retryWait How long to wait in between retries.
    */
-  public SimpleBigQueryWriter(BigQuery bigQuery, int retry, long retryWait, boolean skipInvalidRows) {
-    super(retry, retryWait);
+  public SimpleBigQueryWriter(BigQuery bigQuery, int retry, long retryWait, boolean skipFailedRows) {
+    super(retry, retryWait, skipFailedRows);
     this.bigQuery = bigQuery;
-    this.skipInvalidRows = skipInvalidRows;
   }
 
   /**
@@ -66,7 +64,7 @@ public class SimpleBigQueryWriter extends BigQueryWriter {
   @Override
   public Map<Long, List<BigQueryError>> performWriteRequest(PartitionedTableId tableId,
                                                             SortedMap<SinkRecord, InsertAllRequest.RowToInsert> rows) {
-    InsertAllRequest request = createInsertAllRequest(tableId, rows.values(), skipInvalidRows);
+    InsertAllRequest request = createInsertAllRequest(tableId, rows.values());
     InsertAllResponse writeResponse = bigQuery.insertAll(request);
     if (writeResponse.hasErrors()) {
       logger.warn(
