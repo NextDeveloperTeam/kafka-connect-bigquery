@@ -58,6 +58,7 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
   private final SchemaManager schemaManager;
   private final boolean autoCreateTables;
 
+
   /**
    * @param bigQuery Used to send write requests to BigQuery.
    * @param schemaManager Used to update BigQuery tables.
@@ -69,8 +70,9 @@ public class AdaptiveBigQueryWriter extends BigQueryWriter {
                                 SchemaManager schemaManager,
                                 int retry,
                                 long retryWait,
-                                boolean autoCreateTables) {
-    super(retry, retryWait);
+                                boolean autoCreateTables,
+                                boolean skipInvalidRows) {
+    super(retry, retryWait, skipInvalidRows);
     this.bigQuery = bigQuery;
     this.schemaManager = schemaManager;
     this.autoCreateTables = autoCreateTables;

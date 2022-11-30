@@ -155,7 +155,8 @@ public class MergeQueries {
     logger.trace("Clearing batches from {} on back from {}", batchNumber, intTable(intermediateTable));
     String batchClearQuery = batchClearQuery(intermediateTable, batchNumber);
     logger.trace(batchClearQuery);
-    bigQuery.query(QueryJobConfiguration.of(batchClearQuery));
+    // Run in `batch` priority to reduce the number of concurrent `interactive` queries, of which count against BigQuery limits.
+    bigQuery.query(QueryJobConfiguration.newBuilder(batchClearQuery).setPriority(QueryJobConfiguration.Priority.BATCH).build());
   }
 
   @VisibleForTesting
@@ -226,14 +227,14 @@ public class MergeQueries {
         + ") "
         + "ON `" + destinationTable.getTable() + "`." + keyFieldName + "=src." + key + " "
         + "WHEN MATCHED AND src." + value + " IS NOT NULL "
-          + "THEN UPDATE SET " + valueColumns.stream().map(col -> col + "=src." + value + "." + col).collect(Collectors.joining(", ")) + " "
+          + "THEN UPDATE SET " + valueColumns.stream().map(col -> "`" + col + "`" + "=src." + value + "." + col).collect(Collectors.joining(", ")) + " "
         + "WHEN MATCHED AND src." + value + " IS NULL "
           + "THEN DELETE "
         + "WHEN NOT MATCHED AND src." + value + " IS NOT NULL "
           + "THEN INSERT ("
             + keyFieldName + ", "
             + partitionTimePseudoColumn()
-            + String.join(", ", valueColumns) + ") "
+            + "`" + String.join("`, `", valueColumns) + "`) "
           + "VALUES ("
             + "src." + key + ", "
             + partitionTimeValue()

@@ -20,6 +20,7 @@
 package com.wepay.kafka.connect.bigquery.utils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FieldNameSanitizer {
@@ -34,6 +35,13 @@ public class FieldNameSanitizer {
     return sanitizedName;
   }
 
+  // change the name format to Next table name convention
+  public static String nextTableName(String name, List<String> trimList) {
+    for (String trim: trimList) {
+      name = name.replaceAll(trim, "");
+    }
+    return name;
+  }
 
   // Big Query specifies field name must begin with a alphabet or underscore and can only contain
   // letters, numbers, and underscores.
