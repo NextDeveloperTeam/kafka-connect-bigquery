@@ -17,12 +17,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+def getVaultSecretsList() {
+  return [
+          ['gcp/kcbq', 'creds',   '/tmp/creds.json', 'KCBQ_TEST_KEYFILE'],
+          ['gcp/kcbq', 'creds',   '/tmp/creds.json', 'GOOGLE_APPLICATION_CREDENTIALS']
+  ]
+}
+
 common {
   slackChannel = '#connect-warn'
-  nodeLabel = 'docker-oraclejdk8'
+  nodeLabel = 'docker-debian-jdk8'
   publish = false
   downStreamValidate = false
-  secret_file_list = [
-          ['gcp/kcbq', 'creds',   '/tmp/creds.json', 'KCBQ_TEST_KEYFILE']
-  ]
+  secret_file_list = getVaultSecretsList()
+  timeoutHours = 2
 }
