@@ -24,7 +24,7 @@ package com.wepay.kafka.connect.bigquery.utils;
  * should come from here.
  */
 public class Version {
-  private static String version = "unknown";
+  private static String version = "next-custom-2.7.0-SNAPSHOT";
 
   static {
     String implementationVersion = Version.class.getPackage().getImplementationVersion();
