@@ -26,6 +26,7 @@ import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableId;
 import com.wepay.kafka.connect.bigquery.write.batch.KCBQThreadPoolExecutor;
 import com.wepay.kafka.connect.bigquery.write.batch.MergeBatches;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +36,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -50,6 +52,7 @@ public class MergeQueriesTest {
   private static final TableId INTERMEDIATE_TABLE = TableId.of("ds1", "t_tmp_6_uuid_epoch");
   private static final Schema INTERMEDIATE_TABLE_SCHEMA = constructIntermediateTable();
 
+  private static final SinkRecord TEST_SINK_RECORD = new SinkRecord("test", 0, null, null, null, null, 0);
   @Mock private MergeBatches mergeBatches;
   @Mock private KCBQThreadPoolExecutor executor;
   @Mock private BigQuery bigQuery;
@@ -65,6 +68,11 @@ public class MergeQueriesTest {
     return new MergeQueries(
         KEY, insertPartitionTime, upsert, delete, mergeBatches, executor, bigQuery, schemaManager, context
     );
+  }
+
+  private void initialiseMergeBatches() {
+    mergeBatches = new MergeBatches("_tmp_6_uuid_epoch");
+    mergeBatches.intermediateTableFor(DESTINATION_TABLE);
   }
 
   private static Schema constructIntermediateTable() {
@@ -116,19 +124,19 @@ public class MergeQueriesTest {
   @Test
   public void testUpsertQueryWithPartitionTime() {
     String expectedQuery =
-        "MERGE " + table(DESTINATION_TABLE) + " "
+        "MERGE " + table(DESTINATION_TABLE) + " dstTableAlias "
           + "USING (SELECT * FROM (SELECT ARRAY_AGG(x ORDER BY i DESC LIMIT 1)[OFFSET(0)] src "
             + "FROM " + table(INTERMEDIATE_TABLE) + " x "
             + "WHERE batchNumber=" + BATCH_NUMBER + " "
             + "GROUP BY key.k1, key.k2.nested_k1.doubly_nested_k, key.k2.nested_k2)) "
-          + "ON `" + DESTINATION_TABLE.getTable() + "`." + KEY + "=src.key "
+          + "ON dstTableAlias." + KEY + "=src.key "
           + "WHEN MATCHED "
-            + "THEN UPDATE SET f1=src.value.f1, f2=src.value.f2, f3=src.value.f3, f4=src.value.f4 "
+            + "THEN UPDATE SET dstTableAlias.`f1`=src.value.f1, dstTableAlias.`f2`=src.value.f2, dstTableAlias.`f3`=src.value.f3, dstTableAlias.`f4`=src.value.f4 "
           + "WHEN NOT MATCHED "
-            + "THEN INSERT ("
-              + KEY + ", "
+            + "THEN INSERT (`"
+              + KEY + "`, "
               + "_PARTITIONTIME, "
-              + "f1, f2, f3, f4) "
+              + "`f1`, `f2`, `f3`, `f4`) "
             + "VALUES ("
               + "src.key, "
               + "CAST(CAST(DATE(src.partitionTime) AS DATE) AS TIMESTAMP), "
@@ -142,18 +150,18 @@ public class MergeQueriesTest {
   @Test
   public void testUpsertQueryWithoutPartitionTime() {
     String expectedQuery =
-        "MERGE " + table(DESTINATION_TABLE) + " "
+        "MERGE " + table(DESTINATION_TABLE) + " dstTableAlias "
           + "USING (SELECT * FROM (SELECT ARRAY_AGG(x ORDER BY i DESC LIMIT 1)[OFFSET(0)] src "
             + "FROM " + table(INTERMEDIATE_TABLE) + " x "
             + "WHERE batchNumber=" + BATCH_NUMBER + " "
             + "GROUP BY key.k1, key.k2.nested_k1.doubly_nested_k, key.k2.nested_k2)) "
-          + "ON `" + DESTINATION_TABLE.getTable() + "`." + KEY + "=src.key "
+          + "ON dstTableAlias." + KEY + "=src.key "
           + "WHEN MATCHED "
-            + "THEN UPDATE SET f1=src.value.f1, f2=src.value.f2, f3=src.value.f3, f4=src.value.f4 "
+            + "THEN UPDATE SET dstTableAlias.`f1`=src.value.f1, dstTableAlias.`f2`=src.value.f2, dstTableAlias.`f3`=src.value.f3, dstTableAlias.`f4`=src.value.f4 "
           + "WHEN NOT MATCHED "
-            + "THEN INSERT ("
-              + KEY + ", "
-              + "f1, f2, f3, f4) "
+            + "THEN INSERT (`"
+              + KEY + "`, "
+              + "`f1`, `f2`, `f3`, `f4`) "
             + "VALUES ("
               + "src.key, "
               + "src.value.f1, src.value.f2, src.value.f3, src.value.f4"
@@ -191,10 +199,10 @@ public class MergeQueriesTest {
             + "WHEN MATCHED "
               + "THEN DELETE "
             + "WHEN NOT MATCHED AND src.value IS NOT NULL "
-              + "THEN INSERT ("
-                + KEY + ", "
+              + "THEN INSERT (`"
+                + KEY + "`, "
                 + "_PARTITIONTIME, "
-                + "f1, f2, f3, f4) "
+                + "`f1`, `f2`, `f3`, `f4`) "
               + "VALUES ("
                 + "src.key, "
                 + "CAST(CAST(DATE(src.partitionTime) AS DATE) AS TIMESTAMP), "
@@ -233,9 +241,9 @@ public class MergeQueriesTest {
             + "WHEN MATCHED "
               + "THEN DELETE "
             + "WHEN NOT MATCHED AND src.value IS NOT NULL "
-              + "THEN INSERT ("
-                + KEY + ", "
-                + "f1, f2, f3, f4) "
+              + "THEN INSERT (`"
+                + KEY + "`, "
+                + "`f1`, `f2`, `f3`, `f4`) "
               + "VALUES ("
                 + "src.key, "
                 + "src.value.f1, src.value.f2, src.value.f3, src.value.f4"
@@ -248,21 +256,21 @@ public class MergeQueriesTest {
   @Test
   public void testUpsertDeleteQueryWithPartitionTime() {
     String expectedQuery =
-        "MERGE " + table(DESTINATION_TABLE) + " "
+        "MERGE " + table(DESTINATION_TABLE) + " dstTableAlias "
           + "USING (SELECT * FROM (SELECT ARRAY_AGG(x ORDER BY i DESC LIMIT 1)[OFFSET(0)] src "
             + "FROM " + table(INTERMEDIATE_TABLE) + " x "
             + "WHERE batchNumber=" + BATCH_NUMBER + " "
             + "GROUP BY key.k1, key.k2.nested_k1.doubly_nested_k, key.k2.nested_k2)) "
-          + "ON `" + DESTINATION_TABLE.getTable() + "`." + KEY + "=src.key "
+          + "ON dstTableAlias." + KEY + "=src.key "
           + "WHEN MATCHED AND src.value IS NOT NULL "
-            + "THEN UPDATE SET f1=src.value.f1, f2=src.value.f2, f3=src.value.f3, f4=src.value.f4 "
+            + "THEN UPDATE SET dstTableAlias.`f1`=src.value.f1, dstTableAlias.`f2`=src.value.f2, dstTableAlias.`f3`=src.value.f3, dstTableAlias.`f4`=src.value.f4 "
           + "WHEN MATCHED AND src.value IS NULL "
             + "THEN DELETE "
           + "WHEN NOT MATCHED AND src.value IS NOT NULL "
-            + "THEN INSERT ("
-              + KEY + ", "
+            + "THEN INSERT (`"
+              + KEY + "`, "
               + "_PARTITIONTIME, "
-              + "f1, f2, f3, f4) "
+              + "`f1`, `f2`, `f3`, `f4`) "
             + "VALUES ("
               + "src.key, "
               + "CAST(CAST(DATE(src.partitionTime) AS DATE) AS TIMESTAMP), "
@@ -276,20 +284,20 @@ public class MergeQueriesTest {
   @Test
   public void testUpsertDeleteQueryWithoutPartitionTime() {
     String expectedQuery =
-        "MERGE " + table(DESTINATION_TABLE) + " "
+        "MERGE " + table(DESTINATION_TABLE) + " dstTableAlias "
           + "USING (SELECT * FROM (SELECT ARRAY_AGG(x ORDER BY i DESC LIMIT 1)[OFFSET(0)] src "
             + "FROM " + table(INTERMEDIATE_TABLE) + " x "
             + "WHERE batchNumber=" + BATCH_NUMBER + " "
             + "GROUP BY key.k1, key.k2.nested_k1.doubly_nested_k, key.k2.nested_k2)) "
-          + "ON `" + DESTINATION_TABLE.getTable() + "`." + KEY + "=src.key "
+          + "ON dstTableAlias." + KEY + "=src.key "
           + "WHEN MATCHED AND src.value IS NOT NULL "
-            + "THEN UPDATE SET f1=src.value.f1, f2=src.value.f2, f3=src.value.f3, f4=src.value.f4 "
+            + "THEN UPDATE SET dstTableAlias.`f1`=src.value.f1, dstTableAlias.`f2`=src.value.f2, dstTableAlias.`f3`=src.value.f3, dstTableAlias.`f4`=src.value.f4 "
           + "WHEN MATCHED AND src.value IS NULL "
             + "THEN DELETE "
           + "WHEN NOT MATCHED AND src.value IS NOT NULL "
-            + "THEN INSERT ("
-              + KEY + ", "
-              + "f1, f2, f3, f4) "
+            + "THEN INSERT (`"
+              + KEY + "`, "
+              + "`f1`, `f2`, `f3`, `f4`) "
             + "VALUES ("
               + "src.key, "
               + "src.value.f1, src.value.f2, src.value.f3, src.value.f4"
@@ -307,6 +315,25 @@ public class MergeQueriesTest {
     // No difference in batch clearing between upsert, delete, and both, or with or without partition time
     String actualQuery = MergeQueries.batchClearQuery(INTERMEDIATE_TABLE, BATCH_NUMBER);
     assertEquals(expectedQuery, actualQuery);
+  }
+
+  @Test
+  public void testNoEmptyBatchCreation() {
+    initialiseMergeBatches();
+
+    mergeQueries(false, true, true).mergeFlush(INTERMEDIATE_TABLE);
+
+    assertEquals(0, mergeBatches.incrementBatch(INTERMEDIATE_TABLE));
+  }
+
+  @Test
+  public void testBatchCreation() {
+    initialiseMergeBatches();
+
+    mergeBatches.addToBatch(TEST_SINK_RECORD,INTERMEDIATE_TABLE, new HashMap<>());
+    mergeQueries(false, true, true).mergeFlush(INTERMEDIATE_TABLE);
+
+    assertEquals(1, mergeBatches.incrementBatch(INTERMEDIATE_TABLE));
   }
 
   private String table(TableId table) {

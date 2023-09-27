@@ -24,6 +24,7 @@ import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.InsertAllRequest;
 import com.google.cloud.bigquery.InsertAllResponse;
 
+import com.wepay.kafka.connect.bigquery.ErrantRecordHandler;
 import com.wepay.kafka.connect.bigquery.config.BigQuerySinkConfig;
 import com.wepay.kafka.connect.bigquery.utils.PartitionedTableId;
 
@@ -45,14 +46,14 @@ public class SimpleBigQueryWriter extends BigQueryWriter {
 
   private final BigQuery bigQuery;
 
-
   /**
    * @param bigQuery The object used to send write requests to BigQuery.
    * @param retry How many retries to make in the event of a 500/503 error.
    * @param retryWait How long to wait in between retries.
+   * @param errantRecordHandler Used to handle errant records
    */
-  public SimpleBigQueryWriter(BigQuery bigQuery, int retry, long retryWait, boolean skipInvalidRows) {
-    super(retry, retryWait, skipInvalidRows);
+  public SimpleBigQueryWriter(BigQuery bigQuery, int retry, long retryWait, ErrantRecordHandler errantRecordHandler, boolean skipInvalidRows) {
+    super(retry, retryWait,errantRecordHandler, skipInvalidRows);
     this.bigQuery = bigQuery;
   }
 
